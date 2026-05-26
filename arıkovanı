@@ -1,0 +1,3070 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pazaryeri Finans Paneli</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+    :root {
+      --bg: #09090b; 
+      --surface: rgba(20, 20, 25, 0.45); 
+      --surface2: rgba(28, 28, 35, 0.65); 
+      --border: rgba(255, 255, 255, 0.08);
+      --border-light: rgba(255, 255, 255, 0.04);
+      --text: #f8fafc; 
+      --text2: #94a3b8; 
+      --accent: #818cf8;
+      --accent-hover: #6366f1;
+      --accent-glow: rgba(129, 140, 248, 0.15);
+      --ty: #f97316; 
+      --hp: #c084fc; 
+      --temu: #60a5fa;
+      --ok: #34d399; 
+      --bad: #f87171; 
+      --warn: #fbbf24;
+      --glass-blur: blur(24px);
+      --shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+      --card-radius: 16px;
+      --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body {
+      font-family: 'Outfit', system-ui, sans-serif;
+      letter-spacing: -0.1px;
+      background: var(--bg);
+      background-image: 
+        radial-gradient(circle at 15% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 40%),
+        radial-gradient(circle at 85% 100%, rgba(192, 132, 252, 0.12) 0px, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(249, 115, 22, 0.08) 0px, transparent 50%);
+      background-size: 200% 200%;
+      animation: ambientBG 20s ease-in-out infinite alternate;
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    @keyframes ambientBG {
+      0% { background-position: 0% 0%; }
+      50% { background-position: 100% 100%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 240px;
+      min-height: 100vh;
+      background: rgba(12, 12, 16, 0.65);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border-right: 1px solid var(--border);
+      box-shadow: 10px 0 35px rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 100;
+      overflow-y: auto;
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .logo {
+      padding: 24px 20px 20px;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .logo-t {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-text {
+      font-size: 22px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #818cf8, #c084fc, #f97316, #818cf8);
+      background-size: 300% 300%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.5px;
+      animation: gradientText 8s ease infinite;
+    }
+    @keyframes gradientText {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .logo-svg { flex-shrink: 0; transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); filter: drop-shadow(0 0 10px rgba(129,140,248,0.5)); }
+    .logo:hover .logo-svg { transform: scale(1.15) rotate(-5deg); }
+    .logo-s {
+      font-size: 11px;
+      color: var(--text2);
+      margin-top: 4px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+    .nav-sec {
+      padding: 20px 20px 8px;
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text2);
+      font-weight: 600;
+      opacity: 0.7;
+    }
+    .ni {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      cursor: pointer;
+      color: var(--text2);
+      font-size: 14px;
+      font-weight: 500;
+      border-left: 3px solid transparent;
+      transition: var(--transition-smooth);
+      user-select: none;
+      position: relative;
+    }
+    .ni:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      transform: translateX(4px);
+    }
+    .ni.active {
+      color: var(--text);
+      border-left-color: transparent;
+      background: linear-gradient(90deg, rgba(129,140,248,0.15) 0%, transparent 100%);
+    }
+    .ni.active.ni-ty {
+      background: linear-gradient(90deg, rgba(249,115,22,0.15) 0%, transparent 100%);
+    }
+    .ni.active.ni-hp {
+      background: linear-gradient(90deg, rgba(192,132,252,0.15) 0%, transparent 100%);
+    }
+    .ni.active.ni-temu {
+      background: linear-gradient(90deg, rgba(96,165,250,0.15) 0%, transparent 100%);
+    }
+    .ni.active::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 15%; height: 70%; width: 4px;
+      background: var(--accent);
+      border-radius: 0 4px 4px 0;
+      box-shadow: 0 0 12px var(--accent);
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+    .ni.active.ni-ty::before {
+      background: var(--ty);
+      box-shadow: 0 0 12px var(--ty);
+    }
+    .ni.active.ni-hp::before {
+      background: var(--hp);
+      box-shadow: 0 0 12px var(--hp);
+    }
+    .ni.active.ni-temu::before {
+      background: var(--temu);
+      box-shadow: 0 0 12px var(--temu);
+    }
+    .nbadge {
+      margin-left: auto;
+      background: var(--accent);
+      color: #fff;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 100px;
+      font-weight: 600;
+      box-shadow: 0 0 12px rgba(129, 140, 248, 0.6);
+    }
+
+    /* COLLAPSED SIDEBAR */
+    body.sidebar-collapsed .sidebar { width: 72px; }
+    body.sidebar-collapsed .logo { padding: 24px 0 20px; display: flex; justify-content: center; align-items: center; }
+    body.sidebar-collapsed .logo-t { font-size: 24px; }
+    body.sidebar-collapsed .logo-t span.logo-text, body.sidebar-collapsed .logo-s, body.sidebar-collapsed .nav-sec, body.sidebar-collapsed .ni-t { display: none; }
+    body.sidebar-collapsed .nbadge { display: none !important; }
+    body.sidebar-collapsed .ni { justify-content: center; padding: 16px 0; border-left: none; }
+    body.sidebar-collapsed .ni:hover { transform: scale(1.1); }
+    body.sidebar-collapsed .ni.active::before { width: 3px; height: 50%; top: 25%; left: 2px; border-radius: 10px; }
+    body.sidebar-collapsed .logo-svg { width: 30px; height: 30px; margin: 0; }
+    .ni-i { font-size: 16px; margin-right: 6px; transition: font-size 0.2s, margin 0.2s, width 0.2s, height 0.2s, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); display: inline-flex; align-items: center; justify-content: center; }
+    .ni:hover .ni-i { transform: scale(1.2) rotate(3deg); }
+    img.ni-i { width: 18px; height: 18px; object-fit: contain; border-radius: 4px; }
+    body.sidebar-collapsed img.ni-i { width: 22px; height: 22px; margin: 0; }
+    
+    .mp-logo-img { height: 1.1em; width: 1.1em; object-fit: contain; vertical-align: text-bottom; margin-right: 4px; border-radius: 3px; display: inline-block; filter: drop-shadow(0 0 4px rgba(255,255,255,0.2)); }
+
+    /* MAIN */
+    .main { margin-left: 240px; flex: 1; min-width: 0; display: flex; flex-direction: column; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    body.sidebar-collapsed .main { margin-left: 72px; }
+    .topbar {
+      background: rgba(12, 12, 16, 0.65);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border-bottom: 1px solid var(--border-light);
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .topbar-t { font-size: 20px; font-weight: 600; letter-spacing: -0.5px; }
+    .topbar-d { font-size: 13px; color: var(--text2); font-weight: 500; }
+    .content { padding: 32px; flex: 1; }
+
+    /* PANELS */
+    .tab-panel { display: none; animation: fadeIn 0.3s ease; }
+    .tab-panel.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* STATS & CARDS OVERLAYS */
+    .sc, .cc, .tw, .ubox, .mphead {
+      position: relative;
+      overflow: hidden;
+    }
+    .sc::after, .cc::after, .tw::after, .ubox::after, .mphead::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: radial-gradient(
+        350px circle at var(--mouse-x, 0px) var(--mouse-y, 0px),
+        rgba(255, 255, 255, 0.04),
+        transparent 80%
+      );
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .sc::before, .cc::before, .tw::before, .ubox::before, .mphead::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1px;
+      background: radial-gradient(
+        250px circle at var(--mouse-x, 0px) var(--mouse-y, 0px),
+        rgba(255, 255, 255, 0.12),
+        transparent 60%
+      );
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .sc:hover::after, .cc:hover::after, .tw:hover::after, .ubox:hover::after, .mphead:hover::after,
+    .sc:hover::before, .cc:hover::before, .tw:hover::before, .ubox:hover::before, .mphead:hover::before {
+      opacity: 1;
+    }
+
+    /* Brand-specific spotlight borders */
+    .sc.ty::before, .mphead.ty::before {
+      background: radial-gradient(
+        250px circle at var(--mouse-x, 0px) var(--mouse-y, 0px),
+        rgba(249, 115, 22, 0.35),
+        transparent 60%
+      );
+    }
+    .sc.hp::before, .mphead.hp::before {
+      background: radial-gradient(
+        250px circle at var(--mouse-x, 0px) var(--mouse-y, 0px),
+        rgba(192, 132, 252, 0.35),
+        transparent 60%
+      );
+    }
+    .sc.tm::before, .sc.temu::before, .mphead.temu::before {
+      background: radial-gradient(
+        250px circle at var(--mouse-x, 0px) var(--mouse-y, 0px),
+        rgba(96, 165, 250, 0.35),
+        transparent 60%
+      );
+    }
+
+    .sgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; margin-bottom: 28px; }
+    .sc {
+      background: var(--surface);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border);
+      border-top: 1px solid rgba(255,255,255,0.15);
+      border-bottom: 1px solid rgba(0,0,0,0.3);
+      border-left-width: 4px;
+      border-radius: var(--card-radius);
+      padding: 22px 24px;
+      box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.05);
+      transition: var(--transition-smooth);
+    }
+    .sc:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 20px 40px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.15); }
+    
+    /* Marketplace Theme Colors & Glow effects on Hover */
+    .sc.ac { border-left-color: var(--accent); }
+    .sc.ac:hover { border-color: rgba(129, 140, 248, 0.4); box-shadow: 0 20px 40px rgba(129, 140, 248, 0.15), var(--shadow); }
+    
+    .sc.ok { border-left-color: var(--ok); }
+    .sc.ok:hover { border-color: rgba(52, 211, 153, 0.4); box-shadow: 0 20px 40px rgba(52, 211, 153, 0.15), var(--shadow); }
+    
+    .sc.wa { border-left-color: var(--warn); }
+    .sc.wa:hover { border-color: rgba(251, 191, 36, 0.4); box-shadow: 0 20px 40px rgba(251, 191, 36, 0.12), var(--shadow); }
+    
+    .sc.ba { border-left-color: var(--bad); }
+    .sc.ba:hover { border-color: rgba(248, 113, 113, 0.4); box-shadow: 0 20px 40px rgba(248, 113, 113, 0.12), var(--shadow); }
+    
+    .sc.ty { border-left-color: var(--ty); }
+    .sc.ty:hover { border-color: rgba(249, 115, 22, 0.4); box-shadow: 0 20px 40px rgba(249, 115, 22, 0.15), var(--shadow); }
+    
+    .sc.hp { border-left-color: var(--hp); }
+    .sc.hp:hover { border-color: rgba(192, 132, 252, 0.4); box-shadow: 0 20px 40px rgba(192, 132, 252, 0.15), var(--shadow); }
+    
+    .sc.tm, .sc.temu { border-left-color: var(--temu); }
+    .sc.tm:hover, .sc.temu:hover { border-color: rgba(96, 165, 250, 0.4); box-shadow: 0 20px 40px rgba(96, 165, 250, 0.15), var(--shadow); }
+    
+    .sl { font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 600; position: relative; z-index: 2; }
+    .sv { font-size: 26px; font-weight: 700; line-height: 1.1; letter-spacing: -0.5px; position: relative; z-index: 2; }
+    .ss { font-size: 12.5px; color: var(--text2); margin-top: 8px; font-weight: 500; position: relative; z-index: 2; }
+
+    /* CHARTS */
+    .cgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
+    .cc {
+      background: var(--surface);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border);
+      border-top: 1px solid rgba(255,255,255,0.15);
+      border-bottom: 1px solid rgba(0,0,0,0.3);
+      border-radius: var(--card-radius);
+      padding: 24px;
+      box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.05);
+      transition: var(--transition-smooth);
+    }
+    .cc:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.15); box-shadow: 0 20px 45px rgba(0,0,0,0.55); }
+    .ct { font-size: 15px; font-weight: 600; margin-bottom: 18px; letter-spacing: -0.3px; position: relative; z-index: 2; }
+    .ch { position: relative; height: 250px; z-index: 2; }
+
+    /* TABLE */
+    .tw {
+      background: var(--surface);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border);
+      border-top: 1px solid rgba(255,255,255,0.15);
+      border-bottom: 1px solid rgba(0,0,0,0.3);
+      border-radius: var(--card-radius);
+      overflow: hidden;
+      margin-bottom: 28px;
+      box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.05);
+      transition: var(--transition-smooth);
+    }
+    .th { padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-light); gap: 12px; flex-wrap: wrap; background: rgba(0,0,0,0.2); }
+    .tt { font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
+    .ta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .ts { overflow: auto; max-height: calc(100vh - 230px); }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 700px; }
+    th { position: sticky; top: 0; z-index: 10; background: rgba(20, 20, 25, 0.9); padding: 14px 24px; text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); font-weight: 600; white-space: nowrap; border-bottom: 1px solid var(--border); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+    td { padding: 14px 24px; font-size: 13.5px; border-bottom: 1px solid var(--border-light); font-weight: 500; transition: background 0.2s; }
+    tr { transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s; position: relative; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.05); }
+    tr:hover { transform: translateY(-1.5px) scale(1.002); box-shadow: 0 8px 24px rgba(0,0,0,0.3); z-index: 5; }
+    tr:hover td:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+    tr:hover td:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+    tfoot td { position: sticky; bottom: 0; z-index: 10; background: rgba(20, 20, 25, 0.9); font-weight: 600; border-top: 1px solid var(--border); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 -4px 10px rgba(0,0,0,0.15); }
+
+    /* BADGE */
+    .badge { display: inline-flex; align-items: center; justify-content: center; padding: 4px 10px; border-radius: 100px; font-size: 11.5px; font-weight: 600; letter-spacing: 0.3px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.1); }
+    .b-ok { background: rgba(52,211,153,0.15); color: var(--ok); }
+    .b-wa { background: rgba(251,191,36,0.15); color: var(--warn); }
+    .b-ba { background: rgba(248,113,113,0.15); color: var(--bad); }
+    .b-ac { background: rgba(129,140,248,0.15); color: var(--accent); }
+    .b-ty { background: rgba(249,115,22,0.15); color: var(--ty); }
+    .b-hp { background: rgba(192, 132, 252, 0.15); color: var(--hp); }
+    .b-tm { background: rgba(96, 165, 250, 0.15); color: var(--temu); }
+    .b-br { background: rgba(52,211,153,0.1); color: var(--ok); border: 1px solid rgba(52,211,153,0.3); }
+    .b-ds { background: rgba(129,140,248,0.1); color: var(--accent); border: 1px solid rgba(129,140,248,0.3); }
+
+    /* BUTTONS */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 18px; border-radius: 10px; border: none; cursor: pointer; font-size: 13.5px; font-weight: 600; transition: var(--transition-smooth); white-space: nowrap; font-family: inherit; position: relative; overflow: hidden; }
+    .btn::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 100%); opacity: 0.5; pointer-events: none; }
+    .bp { background: var(--accent); color: #fff; box-shadow: 0 4px 14px rgba(129,140,248,0.4), inset 0 1px 0 rgba(255,255,255,0.2); }
+    .bp:hover { background: var(--accent-hover); transform: translateY(-2px); box-shadow: 0 8px 25px rgba(129,140,248,0.65), inset 0 1px 0 rgba(255,255,255,0.2); }
+    .bs { background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.05); }
+    .bs:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); border-color: rgba(255,255,255,0.2); box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
+    .bd { background: rgba(248,113,113,0.1); color: var(--bad); border: 1px solid rgba(248,113,113,0.3); }
+    .bd:hover { background: rgba(248,113,113,0.2); transform: translateY(-2px); }
+    .bty { background: var(--ty); color: #fff; box-shadow: 0 4px 14px rgba(249,115,22,0.3); }
+    .bty:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(249,115,22,0.45); }
+    .bhp { background: var(--hp); color: #fff; box-shadow: 0 4px 14px rgba(192, 132, 252, 0.3); }
+    .bhp:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(192, 132, 252, 0.45); }
+    .btm { background: var(--temu); color: #fff; box-shadow: 0 4px 14px rgba(96, 165, 250, 0.3); }
+    .btm:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(96, 165, 250, 0.45); }
+    .btn.sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+
+    /* UPLOAD */
+    .ubox { background: var(--surface); border: 1px solid var(--border); border-radius: var(--card-radius); padding: 24px; margin-bottom: 24px; box-shadow: var(--shadow); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); }
+    .uarea { border: 2px dashed rgba(255,255,255,0.15); border-radius: 12px; padding: 32px; text-align: center; cursor: pointer; transition: var(--transition-smooth); background: rgba(0,0,0,0.2); }
+    .uarea:hover, .uarea.dv { border-color: var(--accent); background: rgba(129,140,248,0.08); transform: scale(1.01); box-shadow: 0 0 20px rgba(129, 140, 248, 0.15); }
+    .ui { font-size: 42px; margin-bottom: 12px; display: block; transition: transform 0.3s; }
+    .uarea:hover .ui { transform: translateY(-4px); }
+    .ut { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .us { font-size: 13px; color: var(--text2); }
+
+    /* FORMS */
+    .fg { margin-bottom: 16px; }
+    .fg label { display: block; font-size: 13px; font-weight: 500; color: var(--text2); margin-bottom: 8px; }
+    input, select, textarea { width: 100%; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 10px 14px; color: var(--text); font-size: 14px; outline: none; font-family: inherit; font-weight: 500; transition: border-color 0.2s, box-shadow 0.2s; }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(129,140,248,0.15); }
+    select option, select optgroup { background: #18181b; color: var(--text); }
+    .fgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+    input[type=checkbox] { width: 18px; height: 18px; cursor: pointer; border-radius: 4px; accent-color: var(--accent); }
+
+    /* MODAL */
+    .mbk { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
+    .modal { background: var(--surface2); border: 1px solid var(--border); border-top: 1px solid rgba(255,255,255,0.12); border-radius: 20px; padding: 32px; width: 600px; max-width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6); animation: modalShow 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    @keyframes modalShow {
+      from { transform: translateY(20px) scale(0.96); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+    .modal.lg { width: 800px; }
+    .modal.sm { width: 480px; }
+    .modal-t { font-size: 20px; font-weight: 600; margin-bottom: 24px; letter-spacing: -0.3px; }
+    .mfoot { display: flex; justify-content: flex-end; gap: 12px; margin-top: 28px; }
+
+    /* MISC */
+    .pos { color: var(--ok); }
+    .neg { color: var(--bad); }
+    .empty { text-align: center; padding: 60px 24px; color: var(--text2); }
+    .empty .ei { font-size: 56px; margin-bottom: 16px; display: inline-block; opacity: 0.5; }
+    .empty h3 { color: var(--text); margin-bottom: 8px; font-size: 17px; font-weight: 600; letter-spacing: -0.3px; }
+    .ib { padding: 14px 18px; border-radius: 12px; font-size: 13.5px; font-weight: 500; margin-bottom: 18px; line-height: 1.5; }
+    .ib.ac { background: rgba(129,140,248,0.08); border: 1px solid rgba(129,140,248,0.15); color: #a5b4fc; }
+    .ib.wa { background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.15); color: #fcd34d; }
+    .ib.ok { background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.15); color: #6ee7b7; }
+    
+    .sh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 10px; }
+    .stit { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; }
+    
+    .pbar { flex: 1; height: 8px; background: rgba(0,0,0,0.3); border-radius: 100px; overflow: hidden; }
+    .pfill { height: 100%; border-radius: 100px; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+    .pw { display: flex; align-items: center; gap: 12px; }
+    
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; border: 2px solid var(--bg); }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+
+    /* MAPPER */
+    .mrow { display: flex; align-items: center; gap: 14px; padding: 10px 16px; background: rgba(0,0,0,0.2); border-radius: 10px; margin-bottom: 10px; border: 1px solid transparent; transition: border-color 0.2s; }
+    .mrow:hover { border-color: rgba(255,255,255,0.1); }
+    .mlabel { font-size: 13.5px; min-width: 180px; font-weight: 500; }
+
+    /* SETTINGS TABS */
+    .stabs { display: flex; gap: 8px; border-bottom: 1px solid var(--border); margin-bottom: 24px; padding-bottom: 4px; }
+    .stab { padding: 10px 20px; font-size: 14px; font-weight: 500; cursor: pointer; color: var(--text2); border-radius: 8px; transition: all 0.2s; white-space: nowrap; }
+    .stab:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+    .stab.active { color: var(--text); background: var(--accent); box-shadow: 0 4px 12px rgba(129,140,248,0.25); }
+    .stabp { display: none; animation: fadeIn 0.3s ease; }
+    .stabp.active { display: block; }
+
+    /* DETAIL MODAL */
+    .drow { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed rgba(255,255,255,0.1); font-size: 14px; font-weight: 500; }
+    .drow:last-child { border-bottom: none; }
+    .drow.total { font-weight: 700; font-size: 16px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.1); border-bottom: none; margin-top: 4px; }
+    .drow.sub { color: var(--text2); font-size: 12.5px; font-weight: 400; padding: 4px 0; }
+    .dsec { margin-bottom: 18px; padding: 16px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; }
+    .dsec-t { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin-bottom: 12px; }
+
+    /* MP HEADER */
+    .mphead { border-radius: 16px; padding: 24px 32px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; box-shadow: var(--shadow); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: 1px solid var(--border); }
+    .mphead.ty { background: linear-gradient(135deg, rgba(249,115,22,0.15), rgba(0,0,0,0.4)); border: 1px solid rgba(249,115,22,0.2); border-top: 1px solid rgba(249,115,22,0.35); }
+    .mphead.hp { background: linear-gradient(135deg, rgba(192, 132, 252, 0.15), rgba(0,0,0,0.4)); border: 1px solid rgba(192, 132, 252, 0.2); border-top: 1px solid rgba(192, 132, 252, 0.35); }
+    .mphead.temu { background: linear-gradient(135deg, rgba(96, 165, 250, 0.15), rgba(0,0,0,0.4)); border: 1px solid rgba(96, 165, 250, 0.2); border-top: 1px solid rgba(96, 165, 250, 0.35); }
+    .mpn { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+    .mps { font-size: 13.5px; color: rgba(255,255,255,0.7); margin-top: 4px; font-weight: 500; }
+
+    /* CALC MODE BANNER */
+    .calcbanner { display: flex; align-items: flex-start; gap: 14px; padding: 14px 20px; background: rgba(129,140,248,0.06); border: 1px solid rgba(129,140,248,0.15); border-radius: 12px; margin-bottom: 24px; font-size: 13.5px; font-weight: 500; color: #e0e7ff; }
+    .calcbanner .cbi { font-size: 22px; }
+
+    @keyframes pulse-bad {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.5); }
+      70% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(248, 113, 113, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(248, 113, 113, 0); }
+    }
+    @keyframes pulse-ok {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.5); }
+      70% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+    }
+    .ai-pulse-bad { display: inline-block; width: 8px; height: 8px; background: var(--bad); border-radius: 50%; animation: pulse-bad 1.8s infinite; }
+    .ai-pulse-ok { display: inline-block; width: 8px; height: 8px; background: var(--ok); border-radius: 50%; animation: pulse-ok 1.8s infinite; }
+
+    /* --- SHOCKWAVE / CLICK RIPPLE --- */
+    .click-ripple {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: radial-gradient(circle, rgba(129, 140, 248, 0.5) 0%, rgba(129, 140, 248, 0) 70%);
+      border: 1px solid rgba(129, 140, 248, 0.6);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 999999;
+      transform: translate(-50%, -50%) scale(1);
+      animation: rippleEffect 0.6s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+    }
+    @keyframes rippleEffect {
+      to {
+        transform: translate(-50%, -50%) scale(8);
+        opacity: 0;
+      }
+    }
+
+    /* --- FIXED BACKDROP CANVAS --- */
+    #bg-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    /* --- STAGGERED ENTRANCE ANIMATIONS --- */
+    .tab-panel.active .sgrid > *,
+    .tab-panel.active .cgrid > *,
+    .tab-panel.active .tw,
+    .tab-panel.active .ubox,
+    .tab-panel.active .mphead,
+    .tab-panel.active .card {
+      opacity: 0;
+      transform: translateY(15px);
+      animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes slideUpFade {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .tab-panel.active .sgrid > *:nth-child(1) { animation-delay: 0.04s; }
+    .tab-panel.active .sgrid > *:nth-child(2) { animation-delay: 0.08s; }
+    .tab-panel.active .sgrid > *:nth-child(3) { animation-delay: 0.12s; }
+    .tab-panel.active .sgrid > *:nth-child(4) { animation-delay: 0.16s; }
+    .tab-panel.active .sgrid > *:nth-child(5) { animation-delay: 0.20s; }
+    .tab-panel.active .sgrid > *:nth-child(6) { animation-delay: 0.24s; }
+    .tab-panel.active .sgrid > *:nth-child(7) { animation-delay: 0.28s; }
+
+    .tab-panel.active .cgrid > *:nth-child(1) { animation-delay: 0.15s; }
+    .tab-panel.active .cgrid > *:nth-child(2) { animation-delay: 0.20s; }
+
+    .tab-panel.active .tw { animation-delay: 0.28s; }
+    .tab-panel.active .ubox { animation-delay: 0.12s; }
+    .tab-panel.active .mphead { animation-delay: 0.04s; }
+
+    /* ═══════════════════════════════════════════
+       AUTHENTICATION & LOGIN OVERLAY
+       ═══════════════════════════════════════════ */
+    .login-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(10, 10, 12, 0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.4s ease, visibility 0.4s ease;
+    }
+    .login-card {
+      width: 100%;
+      max-width: 400px;
+      background: rgba(18, 18, 22, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 32px 28px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      animation: loginFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .login-card::before {
+      content: '';
+      position: absolute;
+      top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background: radial-gradient(circle, rgba(129, 140, 248, 0.08) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    @keyframes loginFadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .login-logo {
+      margin-bottom: 24px;
+      position: relative;
+      z-index: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 60px; height: 60px;
+      background: rgba(129, 140, 248, 0.1);
+      border-radius: 50%;
+      border: 1px solid rgba(129, 140, 248, 0.2);
+      color: var(--accent);
+      filter: drop-shadow(0 0 12px rgba(129, 140, 248, 0.4));
+    }
+    .login-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+      position: relative;
+      z-index: 1;
+      letter-spacing: -0.5px;
+    }
+    .login-desc {
+      font-size: 13px;
+      color: var(--text2);
+      margin-bottom: 24px;
+      position: relative;
+      z-index: 1;
+      line-height: 1.5;
+    }
+    .login-form {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .login-input-group {
+      text-align: left;
+    }
+    .login-input-group label {
+      display: block;
+      font-size: 11px;
+      color: var(--text2);
+      margin-bottom: 6px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .login-btn {
+      width: 100%;
+      padding: 12px;
+      font-weight: 600;
+      font-size: 14px;
+      letter-spacing: -0.2px;
+      margin-top: 8px;
+    }
+    .login-card.shake {
+      animation: loginShake 0.4s ease-in-out;
+    }
+    @keyframes loginShake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+  </style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+
+<!-- SECURITY GATEWAY OVERLAY -->
+<div class="login-overlay" id="login-overlay" style="display:flex">
+  <div class="login-card" id="login-card">
+    <div class="login-logo">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+    </div>
+    
+    <!-- SCREEN: LOGIN -->
+    <div id="screen-login" style="display:block">
+      <div class="login-title">Finans Paneli Girişi</div>
+      <div class="login-desc">Uygulamaya ve şifrelenmiş veritabanınıza erişmek için güvenlik şifrenizi girin.</div>
+      <div class="login-form">
+        <div class="login-input-group">
+          <label for="login-password">Güvenlik Şifresi</label>
+          <input type="password" id="login-password" class="inp" placeholder="Şifrenizi girin..." onkeydown="if(event.key==='Enter')handleLogin()" required>
+        </div>
+        <button class="btn bp login-btn" onclick="handleLogin()">Giriş Yap</button>
+        <div style="margin-top:12px; font-size:11px; color:var(--text2)">
+          Şifre değişikliği yaptıysanız veya giriş yapamıyorsanız: <a href="#" onclick="resetAll()" style="color:var(--bad); text-decoration:underline">Tüm Verileri Sıfırla</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<nav class="sidebar">
+  <div class="logo">
+    <div class="logo-t">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" class="logo-svg">
+        <defs>
+          <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#818cf8" />
+            <stop offset="100%" stop-color="#c084fc" />
+          </linearGradient>
+        </defs>
+        <rect x="3" y="3" width="7" height="7" rx="2" stroke="url(#logo-grad)" stroke-width="2.5" stroke-linejoin="round" />
+        <rect x="14" y="3" width="7" height="7" rx="2" stroke="url(#logo-grad)" stroke-width="2.5" stroke-linejoin="round" />
+        <rect x="14" y="14" width="7" height="7" rx="2" stroke="url(#logo-grad)" stroke-width="2.5" stroke-linejoin="round" />
+        <path d="M3 14C3 12.8954 3.89543 12 5 12H10V17C10 18.1046 9.10457 19 8 19H3V14Z" fill="url(#logo-grad)"/>
+      </svg>
+      <span class="logo-text">Pazaryeri</span>
+    </div>
+    <div class="logo-s">Finans & Analiz Paneli</div>
+  </div>
+  <div class="nav-sec">Genel</div>
+  <div class="ni active" onclick="navigate('dashboard')">
+    <span class="ni-i">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+    </span>
+    <span class="ni-t">Dashboard</span>
+  </div>
+  <div class="ni" onclick="navigate('analiz')">
+    <span class="ni-i">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    </span>
+    <span class="ni-t">Satış Analizi</span>
+  </div>
+  <div class="nav-sec">Pazaryerleri</div>
+  <div class="ni ni-ty" onclick="navigate('trendyol')">
+    <img src="unnamed.png" class="ni-i" alt="TY" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"/>
+    <span class="ni-i" style="display:none;color:var(--ty)">●</span>
+    <span class="ni-t">Trendyol</span>
+    <span class="nbadge" id="nb-trendyol" style="display:none"></span>
+  </div>
+  <div class="ni ni-hp" onclick="navigate('hepsiburada')">
+    <img src="hepsiburada-logo-1024.png" class="ni-i" alt="HB" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"/>
+    <span class="ni-i" style="display:none;color:var(--hp)">●</span>
+    <span class="ni-t">Hepsiburada</span>
+    <span class="nbadge" id="nb-hepsiburada" style="display:none"></span>
+  </div>
+  <div class="ni ni-temu" onclick="navigate('temu')">
+    <img src="images.png" class="ni-i" alt="TM" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"/>
+    <span class="ni-i" style="display:none;color:var(--temu)">●</span>
+    <span class="ni-t">Temu</span>
+    <span class="nbadge" id="nb-temu" style="display:none"></span>
+  </div>
+  <div class="nav-sec">Finans</div>
+  <div class="ni" onclick="navigate('giderler')">
+    <span class="ni-i">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    </span>
+    <span class="ni-t">Giderler</span>
+    <span class="nbadge" id="nb-giderler" style="display:none"></span>
+  </div>
+  <div class="ni" onclick="navigate('maliyetler')">
+    <span class="ni-i">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><polygon points="12 22.08 12 12 3 6.92 3 17.08 12 22.08"/><polygon points="12 12 21 6.92 21 17.08 12 22.08"/><polygon points="12 2" 3 6.92 12 12 21 6.92 12 2"/></svg>
+    </span>
+    <span class="ni-t">Ürün Maliyetleri</span>
+  </div>
+  <div class="nav-sec">Sistem</div>
+  <div class="ni" onclick="navigate('ayarlar')">
+    <span class="ni-i">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </span>
+    <span class="ni-t">Ayarlar</span>
+  </div>
+  <div class="ni logout-item" onclick="handleLogout()" style="margin-top:auto !important; border-top:1px solid rgba(255,255,255,0.03); padding-top:16px !important;">
+    <span class="ni-i">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--bad);"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    </span>
+    <span class="ni-t" style="color:var(--bad); font-weight:600;">🔒 Güvenli Çıkış</span>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:16px">
+      <button class="btn bs sm" onclick="document.body.classList.toggle('sidebar-collapsed')" style="padding:6px 12px;font-size:16px;background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.1);color:var(--text);border-radius:8px;" title="Menüyü Daralt/Genişlet">☰</button>
+      <div class="topbar-t" id="page-title">📊 Dashboard</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <select id="global-date-filter" class="btn bs sm" onchange="applyDateFilter()" style="padding:6px 12px;max-width:200px">
+        <option value="all">Tüm Zamanlar</option>
+        <option value="7d">Son 7 Gün</option>
+        <option value="30d">Son 30 Gün</option>
+        <option value="thisMonth">Bu Ay</option>
+        <option value="lastMonth">Geçen Ay</option>
+        <optgroup label="Aylar" id="month-filter-opts"></optgroup>
+      </select>
+      <div class="topbar-d" id="topbar-date"></div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="tab-panel active" id="panel-dashboard"><div id="db-stats"></div><div class="cgrid"><div class="cc"><div class="ct">Pazaryeri Bazında Ciro</div><div class="ch"><canvas id="ch-mp"></canvas></div></div><div class="cc"><div class="ct">Aylık Satış Trendi</div><div class="ch"><canvas id="ch-mon"></canvas></div></div><div class="cc"><div class="ct">Gelir / Gider Kırılımı</div><div class="ch"><canvas id="ch-pnl"></canvas></div></div><div class="cc"><div class="ct">Gider Kategorileri</div><div class="ch"><canvas id="ch-exp"></canvas></div></div></div><div class="tw"><div class="th"><div class="tt">Son Siparişler</div></div><div class="ts" id="db-recent"></div></div></div>
+    <div class="tab-panel" id="panel-trendyol"><div id="mp-trendyol"></div></div>
+    <div class="tab-panel" id="panel-hepsiburada"><div id="mp-hepsiburada"></div></div>
+    <div class="tab-panel" id="panel-temu"><div id="mp-temu"></div></div>
+    <div class="tab-panel" id="panel-analiz"><div id="analiz-c"></div></div>
+    <div class="tab-panel" id="panel-giderler"><div id="gider-c"></div></div>
+    <div class="tab-panel" id="panel-maliyetler"><div id="mal-c"></div></div>
+    <div class="tab-panel" id="panel-ayarlar"><div id="ayar-c"></div></div>
+  </div>
+</div>
+
+<!-- ORDER DETAIL MODAL -->
+<div class="mbk" id="modal-detail" style="display:none">
+  <div class="modal sm">
+    <div class="modal-t" id="detail-title">📊 Maliyet Detayı</div>
+    <div id="detail-body"></div>
+    <div class="mfoot"><button class="btn bs" onclick="closeModal('modal-detail')">Kapat</button></div>
+  </div>
+</div>
+
+<!-- MAPPER MODAL -->
+<div class="mbk" id="modal-mapper" style="display:none">
+  <div class="modal">
+    <div class="modal-t">📋 Sütun Eşleştirme</div>
+    <div class="ib ac">Sütunları sistem alanlarına eşleştirin. Otomatik tahmin edilenler seçili geldi.</div>
+    <div id="mapper-info" style="font-size:12px;color:var(--text2);margin-bottom:12px"></div>
+    <div id="mapper-fields"></div>
+    <div class="mfoot"><button class="btn bs" onclick="closeModal('modal-mapper')">İptal</button><button class="btn bp" onclick="confirmMapper()">✓ Aktar</button></div>
+  </div>
+</div>
+
+<!-- EXPENSE MODAL -->
+<div class="mbk" id="modal-exp" style="display:none">
+  <div class="modal">
+    <div class="modal-t">💸 Gider Ekle</div>
+    <div class="fgrid">
+      <div class="fg"><label>Gider Adı *</label><input id="ex-n" placeholder="Kargo anlaşma ücreti…"/></div>
+      <div class="fg"><label>Kategori</label><select id="ex-c"><option>Kargo</option><option>Paketleme</option><option>Komisyon</option><option>Reklam</option><option>Personel</option><option>Depo</option><option>Muhasebe</option><option>Diğer</option></select></div>
+      <div class="fg"><label>Tutar (₺) *</label><input id="ex-a" type="number" placeholder="0.00" step="0.01"/></div>
+      <div class="fg"><label>Tarih</label><input id="ex-d" type="date"/></div>
+      <div class="fg"><label>Pazaryeri</label><select id="ex-m"><option value="">Genel</option><option value="trendyol">Trendyol</option><option value="hepsiburada">Hepsiburada</option><option value="temu">Temu</option></select></div>
+    </div>
+    <div class="fg"><label>Not</label><textarea id="ex-nt" rows="2"></textarea></div>
+    <div class="mfoot"><button class="btn bs" onclick="closeModal('modal-exp')">İptal</button><button class="btn bp" onclick="saveExpense()">Kaydet</button></div>
+  </div>
+</div>
+
+<!-- PRODUCT MODAL -->
+<div class="mbk" id="modal-prod" style="display:none">
+  <div class="modal sm">
+    <div class="modal-t">📦 Ürün Maliyeti</div>
+    <div class="ib ac">Desi değeri girilirse kargo hesaplamada bu ürüne özel kullanılır. Boş bırakılırsa pazaryeri varsayılan desisi uygulanır.</div>
+    <div class="fgrid">
+      <div class="fg"><label>Ürün Adı / SKU *</label><input id="pr-n" placeholder="Ürün adı veya kod…"/></div>
+      <div class="fg"><label>Birim Maliyet (₺) *</label><input id="pr-c" type="number" placeholder="0.00" step="0.01"/></div>
+      <div class="fg"><label>Desi (Opsiyonel)</label><input id="pr-d" type="number" step="0.1" placeholder="Boşsa varsayılan alınır"/></div>
+      <div class="fg"><label>Paket/Koli İçi Adet</label><input id="pr-ps" type="number" step="1" placeholder="Örn: 24 (24'lü paket ise)"/></div>
+      <div class="fg"><label>KDV Oranı (%)</label><select id="pr-k"><option value="20">%20</option><option value="10">%10</option><option value="8">%8</option><option value="1">%1</option><option value="0">%0 (KDV'siz)</option></select></div>
+    </div>
+    <div class="fg" style="margin-top:12px">
+      <label>Excel Siparişleriyle Doğrudan Eşleştir (Hata Payı %0)</label>
+      <input type="text" id="pr-alias-search" placeholder="Sipariş isimlerinde ara..." oninput="filterAliasList(this.value)" style="margin-bottom:6px;font-size:12px;padding:6px" />
+      <div id="pr-alias-list" style="max-height:160px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;background:var(--bg2);padding:6px;display:flex;flex-direction:column;gap:4px">
+      </div>
+    </div>
+    <input type="hidden" id="pr-idx" value=""/>
+    <div class="mfoot"><button class="btn bs" onclick="closeModal('modal-prod')">İptal</button><button class="btn bp" onclick="saveProduct()">Kaydet</button></div>
+  </div>
+</div>
+
+<script>
+const AI_SPARK_SVG = (color, glowColor) => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ai-spark-icon" style="vertical-align:middle; margin-right:6px; color:${color}; filter:drop-shadow(0 0 8px ${glowColor})"><path d="M9.813 15.904L9 21L8.188 15.904L3 15L8.188 14.096L9 9L9.813 14.096L15 15L9.813 15.904Z" fill="currentColor"/><path d="M19.071 4.929L18.5 8L17.929 4.929L15 4.357L17.929 3.786L18.5 1L19.071 3.786L22 4.357L19.071 4.929Z" fill="currentColor"/></svg>`;
+
+// ═══════════════════════════════════════════
+// SECURITY & CRYPTO HELPERS
+// ═══════════════════════════════════════════
+let activeSessionKey = null;
+
+function bufToHex(buffer) {
+  return Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function hexToBuf(hex) {
+  const match = hex.match(/.{1,2}/g);
+  if (!match) return new Uint8Array(0);
+  return new Uint8Array(match.map(byte => parseInt(byte, 16)));
+}
+
+async function sha256(text) {
+  const msgBuffer = new TextEncoder().encode(text);
+  const hashBuffer = await window.crypto.subtle.digest('SHA-256', msgBuffer);
+  return bufToHex(hashBuffer);
+}
+
+async function deriveKey(password, salt) {
+  const enc = new TextEncoder();
+  const passwordKey = await window.crypto.subtle.importKey(
+    'raw',
+    enc.encode(password),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveKey']
+  );
+  return window.crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: salt,
+      iterations: 100000,
+      hash: 'SHA-256'
+    },
+    passwordKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+async function encryptData(plaintext, key) {
+  const iv = window.crypto.getRandomValues(new Uint8Array(12));
+  const enc = new TextEncoder();
+  const encrypted = await window.crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv: iv },
+    key,
+    enc.encode(plaintext)
+  );
+  const ivHex = bufToHex(iv);
+  const encryptedHex = bufToHex(encrypted);
+  return ivHex + ':' + encryptedHex;
+}
+
+async function decryptData(ciphertextPackage, key) {
+  try {
+    const parts = ciphertextPackage.split(':');
+    if (parts.length !== 2) return null;
+    const iv = hexToBuf(parts[0]);
+    const encrypted = hexToBuf(parts[1]);
+    const decrypted = await window.crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: iv },
+      key,
+      encrypted
+    );
+    return new TextDecoder().decode(decrypted);
+  } catch (e) {
+    console.error('Decryption failed:', e);
+    return null;
+  }
+}
+
+// ═══════════════════════════════════════════
+// AUTHENTICATION FLOW HANDLERS
+// ═══════════════════════════════════════════
+const GLOBAL_PASS_HASH = "3ead83f0549fd4f3748d5a3ddf561b1b69f6f53fda238afac56fa1295d23f0f4";
+
+function showLoginScreen() {
+  document.getElementById('login-overlay').style.display = 'flex';
+  const screenLogin = document.getElementById('screen-login');
+  if (screenLogin) screenLogin.style.display = 'block';
+  const screenSet = document.getElementById('screen-set-pwd');
+  if (screenSet) screenSet.style.display = 'none';
+  setTimeout(() => {
+    const inp = document.getElementById('login-password');
+    if (inp) inp.focus();
+  }, 100);
+}
+
+async function handleLogin() {
+  const pwd = document.getElementById('login-password').value;
+  const card = document.getElementById('login-card');
+  if (!pwd) return;
+  
+  try {
+    const hash = await sha256(pwd);
+    if (hash === GLOBAL_PASS_HASH) {
+      sessionStorage.setItem('session_key', pwd);
+      
+      let saltHex = localStorage.getItem('pwd_salt');
+      if (!saltHex) {
+        const salt = window.crypto.getRandomValues(new Uint8Array(16));
+        saltHex = bufToHex(salt);
+        localStorage.setItem('pwd_salt', saltHex);
+        
+        activeSessionKey = await deriveKey(pwd, salt);
+        
+        // Migration of legacy plain data if exists
+        const legacyData = localStorage.getItem('pfp_v3');
+        if (legacyData) {
+          try {
+            S = JSON.parse(legacyData);
+            localStorage.removeItem('pfp_v3');
+          } catch (e) {
+            console.error('Legacy data migration failed:', e);
+          }
+        }
+        await saveState();
+      } else {
+        activeSessionKey = await deriveKey(pwd, hexToBuf(saltHex));
+      }
+      
+      const loaded = await loadState();
+      if (loaded) {
+        document.getElementById('login-overlay').style.display = 'none';
+        renderDashboard();
+        updateBadges();
+        
+        initSpotlight();
+        initConstellation();
+        initClickRipple();
+      }
+    } else {
+      card.classList.add('shake');
+      setTimeout(() => card.classList.remove('shake'), 400);
+      document.getElementById('login-password').value = '';
+    }
+  } catch (err) {
+    console.error(err);
+    alert('Giriş yapılırken hata oluştu.');
+  }
+}
+
+function handleLogout() {
+  activeSessionKey = null;
+  sessionStorage.removeItem('session_key');
+  const pwdInp = document.getElementById('login-password');
+  if (pwdInp) pwdInp.value = '';
+  showLoginScreen();
+}
+
+
+// ═══════════════════════════════════════════
+// DEFAULT SETTINGS
+// ═══════════════════════════════════════════
+function defSettings() {
+  return {
+    kdvEnabled: false,
+    trendyol: {
+      calcMode: 'otomatik',
+      commRate: 14,
+      baremType: 'standart',   // 'avantajli' | 'standart'
+      baremSinir: 350,
+      baremDesiSinir: 10,
+      baremAvAlt: 40.99, baremAvUst: 79.00,
+      baremStAlt: 77.50, baremStUst: 87.49,
+      sabitHizmet: 8.50,
+      stopajRate: 1,
+      kdvRate: 10,
+      defaultDesi: 2,
+      defaultCargoFirm: 'TEX',
+      desiTariffPTT: [
+        {d:1,p:93.05}, {d:2,p:93.05}, {d:3,p:115.20}, {d:4,p:115.20}, {d:5,p:120.66},
+        {d:6,p:128.20}, {d:7,p:135.78}, {d:8,p:150.88}, {d:9,p:166.01}, {d:10,p:188.71},
+        {d:11,p:198.01}, {d:12,p:207.97}, {d:13,p:217.96}, {d:14,p:227.93}, {d:15,p:237.86},
+        {d:16,p:247.82}, {d:17,p:257.80}, {d:18,p:267.76}, {d:19,p:277.74}, {d:20,p:287.71},
+        {d:21,p:297.67}, {d:22,p:307.63}, {d:23,p:317.59}, {d:24,p:327.54}, {d:25,p:337.52},
+        {d:26,p:347.50}, {d:27,p:357.46}, {d:28,p:367.42}, {d:29,p:377.38}, {d:30,p:387.34}
+      ],
+      desiTariffTEX: [
+        {d:1,p:93.05}, {d:2,p:93.05}, {d:3,p:112.36}, {d:4,p:121.75}, {d:5,p:129.58},
+        {d:6,p:141.96}, {d:7,p:150.79}, {d:8,p:161.05}, {d:9,p:170.90}, {d:10,p:184.16},
+        {d:11,p:194.56}, {d:12,p:204.40}, {d:13,p:213.65}, {d:14,p:222.20}, {d:15,p:231.37},
+        {d:16,p:240.98}, {d:17,p:251.64}, {d:18,p:262.32}, {d:19,p:272.95}, {d:20,p:283.45},
+        {d:21,p:293.98}, {d:22,p:305.78}, {d:23,p:317.96}, {d:24,p:329.23}, {d:25,p:340.43},
+        {d:26,p:351.28}, {d:27,p:362.12}, {d:28,p:373.01}, {d:29,p:383.87}, {d:30,p:394.66}
+      ]
+    },
+    hepsiburada: {
+      calcMode: 'otomatik',
+      commRate: 13,
+      commkdvRate: 10,
+      deliveryFast: true,
+      baremSinir: 400,
+      baremAlt: 50.40, baremUst: 86.40,
+      sabitHizmet: 9.50,
+      stopajRate: 1,
+      tahsilatRate: 1,
+      kdvRate: 10,
+      defaultDesi: 2,
+      defaultCargoFirm: 'HJ',
+      desiTariffHJ: [
+        {d:1,p:94.2}, {d:2,p:94.2}, {d:3,p:112.8}, {d:4,p:122.21}, {d:5,p:130.39}, {d:6,p:141.26}, {d:7,p:150.72}, {d:8,p:159.25}, {d:9,p:169.67}, {d:10,p:178.94}, {d:11,p:186.9}, {d:12,p:194.98}, {d:13,p:212.4}, {d:14,p:217.2}, {d:15,p:229.8}, {d:16,p:241.8}, {d:17,p:250.2}, {d:18,p:264.18}, {d:19,p:282.36}, {d:20,p:290.6}, {d:21,p:301.44}, {d:22,p:335.58}, {d:23,p:346.02}, {d:24,p:356.1}, {d:25,p:366.78}, {d:26,p:376.97}, {d:27,p:387.41}, {d:28,p:397.85}, {d:29,p:408.53}, {d:30,p:432.37}
+      ],
+      desiTariffPTT: [
+        {d:1,p:104.39}, {d:2,p:104.39}, {d:3,p:127.87}, {d:4,p:127.87}, {d:5,p:133.1}, {d:6,p:140.93}, {d:7,p:148.75}, {d:8,p:164.41}, {d:9,p:180.07}, {d:10,p:203.57}, {d:11,p:214.0}, {d:12,p:224.44}, {d:13,p:234.88}, {d:14,p:245.32}, {d:15,p:255.76}, {d:16,p:266.2}, {d:17,p:276.64}, {d:18,p:287.08}, {d:19,p:297.52}, {d:20,p:307.96}, {d:21,p:318.38}, {d:22,p:326.22}, {d:23,p:336.66}, {d:24,p:347.1}, {d:25,p:357.54}, {d:26,p:367.98}, {d:27,p:378.41}, {d:28,p:388.85}, {d:29,p:399.29}, {d:30,p:409.73}
+      ]
+    },
+    temu: {
+      calcMode: 'otomatik',
+      baremSinir: 350,
+      customerContrib: 45,
+      stopajRate: 1,
+      kdvRate: 10,
+      defaultDesi: 2,
+      desiTariff: [
+        {d:1,p:108.55},{d:2,p:108.55},{d:3,p:118.99},{d:4,p:129.44},
+        {d:5,p:139.89},{d:6,p:149.74},{d:7,p:159.59},{d:8,p:169.45},
+        {d:9,p:179.30},{d:10,p:189.15},{d:12,p:209.15},{d:15,p:239.50}
+      ]
+    }
+  };
+}
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let S = {
+  trendyol:{orders:[]}, hepsiburada:{orders:[]}, temu:{orders:[]},
+  expenses:[], products:[],
+  settings: defSettings()
+};
+const defaultProducts = [
+  // PREDO AVANTAJ NEWBORN
+  {name: 'PREDO AVANTAJ 1 Numara Yenidoğan (Newborn) 54\'lü', cost: 130.90, kdvRate: 10},
+  
+  // PREDO PANTS AVANTAJ
+  {name: 'PREDO PANTS AVANTAJ 3 Numara Midi 44\'lü', cost: 132.60, kdvRate: 10},
+  {name: 'PREDO PANTS AVANTAJ 4 Numara Maxi 40\'lı', cost: 132.60, kdvRate: 10},
+  {name: 'PREDO PANTS AVANTAJ 5 Numara Junior 32\'li', cost: 132.60, kdvRate: 10},
+  {name: 'PREDO PANTS AVANTAJ 6 Numara XXL 28\'li', cost: 132.60, kdvRate: 10},
+  {name: 'PREDO PANTS AVANTAJ 7 Numara XXXL 24\'lü', cost: 132.60, kdvRate: 10},
+
+  // PREDO JUMBO
+  {name: 'PREDO JUMBO 2 Numara Mini 76\'lı', cost: 200.60, kdvRate: 10},
+  {name: 'PREDO JUMBO 3 Numara Midi 68\'li', cost: 200.60, kdvRate: 10},
+  {name: 'PREDO JUMBO 4 Numara Maxi 60\'lı', cost: 200.60, kdvRate: 10},
+  {name: 'PREDO JUMBO 5 Numara Junior 52\'li', cost: 200.60, kdvRate: 10},
+  {name: 'PREDO JUMBO 6 Numara XL 44\'lü', cost: 200.60, kdvRate: 10},
+
+  // PREDO HASTA BEZİ
+  {name: 'PREDO HASTA BEZİ Medium 15\'li', cost: 113.05, kdvRate: 10},
+  {name: 'PREDO HASTA BEZİ Large 13\'lü', cost: 113.05, kdvRate: 10},
+  {name: 'PREDO HASTA BEZİ X-Large 11\'li', cost: 113.05, kdvRate: 10},
+  {name: 'PREDO HASTA BEZİ PANTS XL 11\'li', cost: 130.05, kdvRate: 10},
+  {name: 'PREDO HASTA BEZİ PANTS Large 13\'lü', cost: 138.55, kdvRate: 10},
+  {name: 'PREDO HASTA BEZİ PANTS Medium 15\'li', cost: 147.05, kdvRate: 10},
+  {name: 'PREDO HASTA BEZİ Small 30\'lu', cost: 188.70, kdvRate: 10},
+  {name: 'PREDO HASTA BEZİ Medium 30\'lu', cost: 217.60, kdvRate: 10},
+  {name: 'PREDO HASTA BEZİ Large 30\'lu', cost: 238.85, kdvRate: 10},
+  {name: 'PREDO HASTA BEZİ XL 30\'lu', cost: 251.60, kdvRate: 10},
+
+  // YATAK KORUYUCU & LADY
+  {name: 'PREDO UNDERPAD Yatak Koruyucu 30\'lu', cost: 118.15, kdvRate: 10},
+  {name: 'PREDO LADY Normal 10\'lu', cost: 17.00, kdvRate: 10},
+  {name: 'PREDO LADY Long 9\'lu', cost: 17.00, kdvRate: 10},
+  {name: 'PREDO LADY Extra Long 8\'li', cost: 17.00, kdvRate: 10},
+  {name: 'PREDO LADY Normal 10\'lu ULTRA', cost: 32.00, kdvRate: 10},
+  {name: 'PREDO LADY Long 8\'li ULTRA', cost: 32.00, kdvRate: 10},
+  {name: 'PREDO LADY Extra Long 7\'li ULTRA', cost: 32.00, kdvRate: 10},
+  {name: 'PREDO Bebek Pudrası 200gr', cost: 22.00, kdvRate: 10},
+  {name: 'PREDO Peçete 200gr', cost: 32.00, kdvRate: 10},
+  
+  // DETERJAN & TEMİZLİK
+  {name: 'PREDOX TOZ DETERJAN Dağ Esintisi (Mavi) 9 KG', cost: 220.15, kdvRate: 10},
+  {name: 'PREDOX TOZ DETERJAN Lavanta (Mor) 9 KG', cost: 220.15, kdvRate: 10},
+  {name: 'PREDOX TOZ DETERJAN Colormatik (Yeşil) 9 KG', cost: 220.15, kdvRate: 10},
+  {name: 'PREDOX TOZ DETERJAN Gül (Kırmızı) 9 KG', cost: 220.15, kdvRate: 10},
+  
+  {name: 'PREDOX TOZ DETERJAN Dağ Esintisi (Mavi) 3 KG', cost: 79.05, kdvRate: 10},
+  {name: 'PREDOX TOZ DETERJAN Lavanta (Mor) 3 KG', cost: 79.05, kdvRate: 10},
+  {name: 'PREDOX TOZ DETERJAN Colormatik (Yeşil) 3 KG', cost: 79.05, kdvRate: 10},
+  {name: 'PREDOX TOZ DETERJAN Gül (Kırmızı) 3 KG', cost: 79.05, kdvRate: 10},
+  {name: 'PREDOX Elde Yıkama Toz Deterjan 1 KG', cost: 24.00, kdvRate: 10},
+  {name: 'PREDOX Elde Yıkama Toz Deterjan 100gr', cost: 14.00, kdvRate: 10},
+  {name: 'PREDOX SIVI ÇAMAŞIR YUMUŞATICI 4LT', cost: 101.15, kdvRate: 10},
+  {name: 'PREDOX SIVI ÇAMAŞIR YUMUŞATICI 3LT', cost: 85.00, kdvRate: 10},
+  {name: 'PREDOX SIVI ÇAMAŞIR YUMUŞATICI 1LT', cost: 34.00, kdvRate: 10},
+  {name: 'PREDOX SIVI ÇAMAŞIR DETERJANI 3LT', cost: 138.55, kdvRate: 10},
+  {name: 'PREDOX BULAŞIK DETERJANI 4LT', cost: 127.50, kdvRate: 10},
+  {name: 'PREDOX BULAŞIK DETERJANI 750ml', cost: 28.90, kdvRate: 10},
+  {name: 'PREDOX BULAŞIK DETERJANI 650ml', cost: 28.05, kdvRate: 10},
+  {name: 'PREDOX BULAŞIK DETERJANI XPower', cost: 38.25, kdvRate: 10},
+  {name: 'PREDOX Multi Surface Cleaner (Yüzey Temizleyici) 1LT', cost: 41.00, kdvRate: 10},
+  {name: 'PREDO CARE SIVI SABUN 500ml', cost: 27.20, kdvRate: 10},
+  {name: 'PREDO CARE SIVI SABUN 3LT', cost: 103.70, kdvRate: 10},
+  {name: 'PREDO Şampuan Argan 600ml', cost: 45.05, kdvRate: 10},
+  {name: 'PREDO Şampuan Avocado 600ml', cost: 45.05, kdvRate: 10},
+  {name: 'PREDO Şampuan Coconut 600ml', cost: 45.05, kdvRate: 10},
+  {name: 'PREDO Şampuan Olive 600ml', cost: 45.05, kdvRate: 10},
+  
+  {name: 'PREDO Duş Jeli Argan 600ml', cost: 45.05, kdvRate: 10},
+  {name: 'PREDO Duş Jeli Avocado 600ml', cost: 45.05, kdvRate: 10},
+  {name: 'PREDO Duş Jeli Coconut 600ml', cost: 45.05, kdvRate: 10},
+  {name: 'PREDO Duş Jeli Olive 600ml', cost: 45.05, kdvRate: 10},
+  {name: 'PREDO Saç Kremi 600ml', cost: 50.00, kdvRate: 10},
+  {name: 'PREDO BEBE ŞAMPUANI 200ml', cost: 17.00, kdvRate: 10},
+  {name: 'PREDO BEBE ŞAMPUANI 400ml', cost: 22.10, kdvRate: 10},
+  // ISLAK MENDİL & VÜCUT TEMİZLEME HAVLUSU
+  {name: 'PREDO Islak Cep Mendili 15\'li', cost: 5.00, kdvRate: 10},
+  {name: 'PREDO Islak Havlu Clean Care 34\'lü', cost: 8.90, kdvRate: 10},
+  {name: 'PREDO Islak Havlu Clean Care 40\'lı', cost: 10.00, kdvRate: 10},
+  {name: 'PREDO Yenidoğan Islak Mendil 54\'lü', cost: 16.00, kdvRate: 10},
+  
+  {name: 'PREDO Islak Havlu Normal 72\'li', cost: 16.00, kdvRate: 10},
+  {name: 'PREDO Islak Havlu Clean Care 72\'li', cost: 16.00, kdvRate: 10},
+  {name: 'PREDO Islak Havlu Family 72\'li', cost: 16.00, kdvRate: 10},
+  
+  {name: 'PREDO Islak Havlu Normal 80\'li', cost: 18.00, kdvRate: 10},
+  {name: 'PREDO Islak Havlu Family 80\'li', cost: 18.00, kdvRate: 10},
+  
+  {name: 'PREDO Islak Havlu Normal 100\'lü', cost: 19.00, kdvRate: 10},
+  {name: 'PREDO Islak Havlu Clean Care 100\'lü', cost: 19.00, kdvRate: 10},
+  
+  {name: 'PREDO Islak Havlu Labella 120\'li', cost: 25.00, kdvRate: 10},
+  {name: 'PREDO Islak Havlu Family 120\'li', cost: 25.00, kdvRate: 10},
+  
+  {name: 'PREDO Makyaj Temizleme Havlusu 12\'li', cost: 14.00, kdvRate: 10},
+  {name: 'PREDO Vücut Temizleme Havlusu 55\'li', cost: 32.00, kdvRate: 10},
+
+  // YÜZEY TEMİZLEME HAVLULARI & MOP
+  {name: 'PREDOX Mop Yüzey Temizleme Havlusu 52\'li', cost: 50.00, kdvRate: 10},
+  {name: 'Multi Surface Yüzey Temizleme Havlusu 100\'lü', cost: 50.00, kdvRate: 10},
+  
+  // TEMİZLİK BEZİ & SÜNGER
+  {name: 'PREDOX Mikrofiber Bez 4\'lü', cost: 38.00, kdvRate: 10},
+  {name: 'PREDOX Bulaşık Süngeri 5\'li', cost: 30.00, kdvRate: 10}
+];
+
+async function loadState(){
+  try {
+    if (!activeSessionKey) return false;
+    const encrypted = localStorage.getItem('state_enc');
+    if (encrypted) {
+      const decrypted = await decryptData(encrypted, activeSessionKey);
+      if (decrypted) {
+        S = JSON.parse(decrypted);
+      } else {
+        alert('Şifreli veriler çözülemedi. Lütfen tekrar giriş yapın.');
+        handleLogout();
+        return false;
+      }
+    }
+    if(!S.settings)S.settings=defSettings();
+    const def=defSettings();
+    ['trendyol','hepsiburada','temu'].forEach(mp=>{
+      if(!S.settings[mp])S.settings[mp]=def[mp];
+      if(!S.settings[mp].desiTariff && def[mp].desiTariff)S.settings[mp].desiTariff=def[mp].desiTariff;
+    });
+    if(S.settings.trendyol){
+      if(!S.settings.trendyol.desiTariffPTT)S.settings.trendyol.desiTariffPTT=def.trendyol.desiTariffPTT;
+      if(!S.settings.trendyol.desiTariffTEX)S.settings.trendyol.desiTariffTEX=def.trendyol.desiTariffTEX;
+      if(!S.settings.trendyol.defaultCargoFirm)S.settings.trendyol.defaultCargoFirm=def.trendyol.defaultCargoFirm;}
+    if(S.settings.hepsiburada){
+      if(!S.settings.hepsiburada.desiTariffPTT)S.settings.hepsiburada.desiTariffPTT=def.hepsiburada.desiTariffPTT;
+      if(!S.settings.hepsiburada.desiTariffHJ)S.settings.hepsiburada.desiTariffHJ=def.hepsiburada.desiTariffHJ;
+      if(!S.settings.hepsiburada.defaultCargoFirm)S.settings.hepsiburada.defaultCargoFirm=def.hepsiburada.defaultCargoFirm;}
+    if(!S.products||S.products.length===0){
+      S.products=defaultProducts.map(p=>({...p}));
+      await saveState();
+    }
+    return true;
+  } catch(e) {
+    console.error('loadState hatası:', e);
+    return false;
+  }
+}
+async function saveState(){
+  try {
+    if (!activeSessionKey) return;
+    const encrypted = await encryptData(JSON.stringify(S), activeSessionKey);
+    localStorage.setItem('state_enc', encrypted);
+  } catch(e) {
+    console.error('saveState hatası:', e);
+  }
+}
+
+// ═══════════════════════════════════════════
+// UTILS & ANIMATIONS
+// ═══════════════════════════════════════════
+window.runCounters = function() {
+  try {
+    document.querySelectorAll('.sv').forEach(el => {
+      if(el.classList.contains('counted')) return;
+      const txt = el.textContent || '';
+      if(txt.includes('₺')) {
+        const val = parseFloat(txt.replace(/[^\d,-]/g,'').replace(',','.'));
+        if(!isNaN(val)) {
+          el.classList.add('counted');
+          let start = null;
+          const dur = 800;
+          const step = ts => {
+            if(!start) start = ts;
+            let p = (ts - start) / dur;
+            if (p > 1) p = 1;
+            if (p < 0 || isNaN(p)) p = 1;
+            el.textContent = '₺' + (p * val).toLocaleString('tr-TR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if(p < 1) requestAnimationFrame(step);
+            else el.textContent = txt;
+          };
+          requestAnimationFrame(step);
+        }
+      }
+    });
+  } catch (e) { console.error('runCounters error', e); }
+};
+
+window.sortTable = function(tableId, colIdx, type, thEl) {
+  try {
+    const table = document.getElementById(tableId); if(!table) return;
+    const tbody = table.querySelector('tbody'); if(!tbody) return;
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    const isAsc = thEl.dataset.dir !== 'asc'; thEl.dataset.dir = isAsc ? 'asc' : 'desc';
+    rows.sort((a,b)=>{
+      const cA = a.children[colIdx], cB = b.children[colIdx];
+      let v1 = cA ? cA.textContent.trim() : '', v2 = cB ? cB.textContent.trim() : '';
+      if(type==='num'){v1=parseFloat(v1.replace(/[^\d,-]/g,'').replace(',','.'))||0;v2=parseFloat(v2.replace(/[^\d,-]/g,'').replace(',','.'))||0;}
+      return isAsc ? (v1>v2?1:-1) : (v1<v2?1:-1);
+    });
+    rows.forEach(r=>tbody.appendChild(r));
+  } catch (e) { console.error('sortTable error', e); }
+};
+
+window.runSim = function() {
+  try {
+    const mpEl = document.getElementById('sim-mp'), priceEl = document.getElementById('sim-price'), costEl = document.getElementById('sim-cost'), desiEl = document.getElementById('sim-desi'), commEl = document.getElementById('sim-comm');
+    if (!mpEl || !priceEl || !costEl || !desiEl || !commEl) return;
+    const mp = mpEl.value, price = parseFloat(priceEl.value)||0, cost = parseFloat(costEl.value)||0, desi = parseFloat(desiEl.value)||0, commRate = parseFloat(commEl.value)||0;
+    const kargoObj = calcKargo(mp, price, desi);
+    const kargo = kargoObj ? kargoObj.price : 0;
+    const comm = price * (commRate / 100);
+    let sh = 0; if(mp==='trendyol') sh = 4.49 * 1.20; else if(mp==='hepsiburada') sh = price * 0.02 * 1.20;
+    const tah = ((price / 1.2) * 0.2) - ((cost / 1.2) * 0.2), stopaj = comm * 0.15;
+    const net = price - (comm + sh + kargo + tah + stopaj + cost);
+    const el = document.getElementById('sim-result'), marj = price>0 ? (net/price)*100 : 0;
+    if(el) {
+      el.innerHTML = `${fmt(net)} <span style="font-size:12px;opacity:0.8">(%${marj.toFixed(1)})</span>`;
+      el.style.color = net>=0 ? 'var(--ok)' : 'var(--bad)';
+    }
+  } catch (e) { console.error('runSim error', e); }
+};
+const TRY=n=>{const v=parseFloat(n);return isNaN(v)?0:v};
+const fmt=n=>'₺'+TRY(n).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtN=n=>(n||0).toLocaleString('tr-TR');
+const pct=(a,b)=>b>0?((a/b)*100).toFixed(1):'0.0';
+const todayStr=()=>new Date().toISOString().split('T')[0];
+const clr=n=>n>=0?'pos':'neg';
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function showToast(msg){
+  const container = document.getElementById('toast-container') || (() => {
+    const c = document.createElement('div');
+    c.id = 'toast-container';
+    Object.assign(c.style, {
+      position: 'fixed',
+      bottom: '24px',
+      right: '24px',
+      zIndex: '9999',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '8px',
+      pointerEvents: 'none'
+    });
+    document.body.appendChild(c);
+    return c;
+  })();
+
+  const t = document.createElement('div');
+  t.className = 'toast-notification';
+  t.innerHTML = `
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span style="font-size:16px; color:var(--ok); font-weight:bold;">✓</span>
+      <span style="flex:1;">${msg}</span>
+    </div>
+    <div class="toast-progress" style="position:absolute; bottom:0; left:0; height:3px; width:100%; background:var(--accent); transform-origin:left; animation:toastProgress 3s linear forwards;"></div>
+  `;
+
+  Object.assign(t.style, {
+    background: 'rgba(20, 20, 25, 0.85)',
+    backdropFilter: 'var(--glass-blur)',
+    webkitBackdropFilter: 'var(--glass-blur)',
+    border: '1px solid var(--border)',
+    borderLeft: '4px solid var(--accent)',
+    color: 'var(--text)',
+    padding: '12px 20px',
+    borderRadius: '10px',
+    fontSize: '13px',
+    fontWeight: '500',
+    boxShadow: 'var(--shadow)',
+    opacity: '0',
+    transform: 'translateX(50px) scale(0.9)',
+    transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+    position: 'relative',
+    overflow: 'hidden',
+    pointerEvents: 'auto',
+    width: '280px'
+  });
+
+  if(!document.getElementById('toast-progress-style')) {
+    const s = document.createElement('style');
+    s.id = 'toast-progress-style';
+    s.textContent = `
+      @keyframes toastProgress {
+        from { transform: scaleX(1); }
+        to { transform: scaleX(0); }
+      }
+    `;
+    document.head.appendChild(s);
+  }
+
+  container.appendChild(t);
+  t.offsetHeight; // Force reflow
+  
+  t.style.opacity = '1';
+  t.style.transform = 'translateX(0) scale(1)';
+
+  const remove = () => {
+    t.style.opacity = '0';
+    t.style.transform = 'translateY(10px) scale(0.9)';
+    setTimeout(() => t.remove(), 300);
+  };
+
+  setTimeout(remove, 3000);
+}
+function closeModal(id){document.getElementById(id).style.display='none'}
+
+// ═══════════════════════════════════════════
+// MARKETPLACE CONFIG
+// ═══════════════════════════════════════════
+const MP={
+  trendyol:{name:'Trendyol',icon:'<img src="unnamed.png" class="mp-logo-img" alt="TY" onerror="this.style.display=\'none\'" />',cls:'ty',hcls:'ty',fields:[{key:'orderNo',label:'Sipariş No',req:false},{key:'productName',label:'Ürün Adı',req:true},{key:'quantity',label:'Adet',req:false},{key:'salePrice',label:'Satış Fiyatı',req:true},{key:'commission',label:'Komisyon',req:false},{key:'shippingCost',label:'Kargo',req:false},{key:'desi',label:'Desi',req:false},{key:'cargoFirm',label:'Kargo Firması',req:false},{key:'date',label:'Tarih',req:false},{key:'status',label:'Durum',req:false}],autoMap:{orderNo:['sipariş no','siparis no','order no','sipariş numarası'],productName:['ürün adı','urun adi','product name','ürün adı/kodu','ürün'],quantity:['miktar','adet','quantity','qty'],salePrice:['sipariş tutarı','satış fiyatı','brüt satış','satış tutarı','birim fiyat','fiyat','tutar'],commission:['komisyon tutarı','komisyon','commission'],shippingCost:['kargo ücreti','kargo tutarı','kargo bedeli','kargo','shipping'],desi:['desi','kargo desi','fatura desi','ds'],cargoFirm:['kargo firması','taşıyıcı firma','kargo şirketi'],date:['sipariş tarihi','tarih','date','order date'],status:['sipariş durumu','durum','status']}},
+  hepsiburada:{name:'Hepsiburada',icon:'<img src="hepsiburada-logo-1024.png" class="mp-logo-img" alt="HB" onerror="this.style.display=\'none\'" />',cls:'hp',hcls:'hp',fields:[{key:'orderNo',label:'Sipariş No',req:false},{key:'productName',label:'Ürün Adı',req:true},{key:'quantity',label:'Adet',req:false},{key:'salePrice',label:'Satış Fiyatı',req:true},{key:'commission',label:'Komisyon',req:false},{key:'shippingCost',label:'Kargo',req:false},{key:'desi',label:'Desi',req:false},{key:'cargoFirm',label:'Kargo Firması',req:false},{key:'date',label:'Tarih',req:false},{key:'status',label:'Durum',req:false}],autoMap:{orderNo:['sipariş numarası','sipariş no','paket numarası','order id'],productName:['ürün adı','ürün ismi','product name','listing başlığı'],quantity:['miktar','adet','quantity'],salePrice:['faturalandırılacak birim satış fiyatı','birim listeleme fiyatı','birim satış fiyatı','satış fiyatı','satış tutarı','tutar','fiyat'],commission:['komisyon tutarı (kdv dahil)', 'hb alacağı net komisyon','komisyon','komisyon tutarı','hizmet bedeli'],shippingCost:['kargo bedeli','kargo ücreti','teslimat ücreti','kargo'],desi:['desi','kargo desi','fatura desi','ds'],cargoFirm:['kargo firması','kargo sirketi','kargo şirketi','taşıyıcı firma'],date:['sipariş tarihi','tarih','oluşturma tarihi','date'],status:['paket durumu','sipariş durumu','durum','status']}},
+  temu:{name:'Temu',icon:'<img src="images.png" class="mp-logo-img" alt="TM" onerror="this.style.display=\'none\'" />',cls:'temu',hcls:'temu',fields:[{key:'orderNo',label:'Order No',req:false},{key:'productName',label:'Product Name',req:true},{key:'quantity',label:'Quantity',req:false},{key:'salePrice',label:'Sale Price',req:true},{key:'commission',label:'Commission',req:false},{key:'shippingCost',label:'Shipping',req:false},{key:'desi',label:'Desi',req:false},{key:'date',label:'Date',req:false},{key:'status',label:'Status',req:false}],autoMap:{orderNo:['order id','order no','sipariş no'],productName:['product name','item name','ürün adı','sku name'],quantity:['quantity','qty','adet'],salePrice:['sale price','item price','price','total price','satış fiyatı'],commission:['commission','fee'],shippingCost:['shipping fee','shipping cost','kargo'],desi:['desi','kargo desi','fatura desi','ds'],date:['order date','date','tarih'],status:['status','order status','durum']}}
+};
+
+function renderRecentOrders(){
+  const orders=getFilteredOrders().slice(0,20);
+  document.getElementById('db-recent').innerHTML=orders.length?buildTable(orders,true):`<div class="empty"><div class="ei">📭</div><h3>Henüz sipariş yok</h3><p>Pazaryeri sekmesinden Excel yükleyin.</p></div>`;
+}
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+const PTITLES={dashboard:'📊 Dashboard',trendyol:'🟠 Trendyol',hepsiburada:'🟡 Hepsiburada',temu:'🟣 Temu',analiz:'📈 Satış Analizi',giderler:'💸 Giderler',maliyetler:'📦 Ürün Maliyetleri',ayarlar:'⚙️ Ayarlar'};
+function navigate(page){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  const panel=document.getElementById('panel-'+page);if(panel)panel.classList.add('active');
+  document.querySelectorAll('.ni').forEach(n=>{if(n.getAttribute('onclick')?.includes(`'${page}'`))n.classList.add('active')});
+  document.getElementById('page-title').textContent=PTITLES[page]||page;
+  ({dashboard:renderDashboard,trendyol:()=>renderMP('trendyol'),hepsiburada:()=>renderMP('hepsiburada'),temu:()=>renderMP('temu'),analiz:renderAnaliz,giderler:renderGiderler,maliyetler:renderMaliyetler,ayarlar:renderAyarlar})[page]?.();
+  updateBadges();
+}
+function updateBadges(){
+  ['trendyol','hepsiburada','temu'].forEach(mp=>{const b=document.getElementById('nb-'+mp),n=(S[mp]?.orders||[]).length;b.textContent=n>999?'999+':n;b.style.display=n>0?'':'none'});
+  const gb=document.getElementById('nb-giderler'),gn=(S.expenses||[]).length;gb.textContent=gn;gb.style.display=gn>0?'':'none';
+}
+
+// ═══════════════════════════════════════════
+// CARGO CALCULATION ENGINE
+// ═══════════════════════════════════════════
+function lookupDesi(desi,tariff){
+  if(!tariff||!tariff.length)return 100;
+  const s=[...tariff].sort((a,b)=>a.d-b.d);
+  if(desi<=s[0].d)return s[0].p;
+  const last=s[s.length-1];
+  if(desi>=last.d){
+    if(s.length<2)return last.p;
+    const prev=s[s.length-2];
+    return last.p+(last.p-prev.p)/(last.d-prev.d)*(desi-last.d);
+  }
+  for(let i=1;i<s.length;i++){
+    if(desi<=s[i].d){
+      const lo=s[i-1],hi=s[i],t=(desi-lo.d)/(hi.d-lo.d);
+      return lo.p+t*(hi.p-lo.p);
+    }
+  }
+  return last.p;
+}
+
+function calcKargo(mp,salePrice,desi,order={}){
+  const def=defSettings()[mp]||{};
+  const c={...def, ...(S.settings[mp]||{})};
+  if(mp==='trendyol'){
+    const sinir = c.baremSinir||350;
+    const desiSinir = c.baremDesiSinir||10;
+    const barem = salePrice < sinir && desi <= desiSinir;
+    if(barem){
+      const av=c.baremType==='avantajli';
+      const bAvAlt = c.baremAvAlt || def.baremAvAlt;
+      const bAvUst = c.baremAvUst || def.baremAvUst;
+      const bStAlt = c.baremStAlt || def.baremStAlt;
+      const bStUst = c.baremStUst || def.baremStUst;
+      const price=salePrice<=199?(av?TRY(bAvAlt):TRY(bStAlt)):(av?TRY(bAvUst):TRY(bStUst));
+      return{price,type:'barem',label:`Barem ${av?'Avantajlı':'Standart'} (${salePrice<=199?'0-199':'200-349'} TL)`,rawKargo:price,contrib:0};
+    }
+    const firmStr=String(order.cargoFirm||c.defaultCargoFirm||'TEX').toUpperCase();
+    const isPTT = firmStr.includes('PTT');
+    const tariff=isPTT?(c.desiTariffPTT||def.desiTariffPTT):(c.desiTariffTEX||def.desiTariffTEX);
+    const price=lookupDesi(desi,tariff);
+    let reason = '';
+    if (salePrice >= sinir) reason = ` (Tutar ${sinir} TL üzeri!)`;
+    else if (desi > desiSinir) reason = ` (Desi > ${desiSinir}!)`;
+    return{price,type:'desi',label:`Desi bazlı ${isPTT?'PTT':'TEX'} (${desi} desi)${reason}`,rawKargo:price,contrib:0};
+  }
+  if(mp==='hepsiburada'){
+    const barem=salePrice<(c.baremSinir||400)&&c.deliveryFast;
+    if(barem){
+      const bAlt = c.baremAlt || def.baremAlt;
+      const bUst = c.baremUst || def.baremUst;
+      const price=salePrice<=199?TRY(bAlt):TRY(bUst);
+      return{price,type:'barem',label:`hepsiJET Barem (${salePrice<=199?'0-199':'200-399'} TL)`,rawKargo:price,contrib:0};
+    }
+    const firmStr=String(order.cargoFirm||c.defaultCargoFirm||'HJ').toUpperCase();
+    const isPTT = firmStr.includes('PTT');
+    const tariff=isPTT?(c.desiTariffPTT||def.desiTariffPTT):(c.desiTariffHJ||def.desiTariffHJ);
+    const price=lookupDesi(desi,tariff);
+    return{price,type:'desi',label:`Desi bazlı ${isPTT?'PTT Kargo':'hepsiJET'} (${desi} desi)`,rawKargo:price,contrib:0};
+  }
+  // temu
+  const tariff = c.desiTariff || def.desiTariff;
+  const rawKargo=lookupDesi(desi,tariff);
+  const contrib=salePrice<(c.baremSinir||350)?TRY(c.customerContrib||def.customerContrib):0;
+  const price=Math.max(0,rawKargo-contrib);
+  return{price,type:contrib>0?'barem':'desi',label:contrib>0?`Aras (${rawKargo.toFixed(2)} − ${contrib} müşteri katkısı)`:`Aras Desi (${desi} desi)`,rawKargo,contrib};
+}
+
+// ═══════════════════════════════════════════
+// ORDER DETAILS CALCULATOR
+// ═══════════════════════════════════════════
+function getDynamicMultiplier(orderName, prod) {
+  if (!orderName) return 1;
+  const o = ' ' + String(orderName).toLowerCase() + ' ';
+  
+  // 1. Kesin Set/Paket/Koli Yakalama (Örn: "4 paket", "3 koli", "5 set")
+  const pkgMatch = o.match(/(?:^|[^0-9])(\d+)\s*(?:paket|koli|set)(?:[^a-zçğıöşü]|$)/);
+  if (pkgMatch) {
+    const val = parseInt(pkgMatch[1]);
+    if (val > 1 && val <= 50) return val;
+  }
+  
+  // 2. Kampanya Yakalama (Örn: "3 al 2 öde" -> gönderilecek miktar 3'tür)
+  const campMatch = o.match(/(?:^|[^0-9])(\d+)\s*al\s*\d+\s*(?:öde|bedava)/);
+  if (campMatch) {
+    const val = parseInt(campMatch[1]);
+    if (val > 1 && val <= 50) return val;
+  }
+  
+  // 3. AxB Çarpan Yakalama (Örn: "15x3", "3x20")
+  const axbMatch = o.match(/(?:^|[^a-zçğıöşü0-9])(\d+)\s*x\s*(\d+)(?:[^a-zçğıöşü0-9]|$)/);
+  if (axbMatch) {
+    const v1 = parseInt(axbMatch[1]);
+    const v2 = parseInt(axbMatch[2]);
+    const bundle = Math.min(v1, v2); // Genellikle küçük olan sayı paket adedidir (Örn 15x3 -> 3 paket)
+    if (bundle > 1 && bundle <= 50) return bundle;
+  }
+
+  // 4. Tekil Çarpan Yakalama (Örn: "x4", "4x")
+  const xMatch = o.match(/(?:^|[^a-zçğıöşü0-9])(?:x\s*(\d+)|(\d+)\s*x)(?:[^a-zçğıöşü0-9]|$)/);
+  if (xMatch) {
+    const val = parseInt(xMatch[1] || xMatch[2]);
+    if (val > 1 && val <= 50) return val;
+  }
+  const p = prod ? ' ' + String(prod.name).toLowerCase() + ' ' : '';
+  let packSize = prod?.packSize || 0;
+  
+  // 5. "X'li" veya "X Adet" formatı
+  // Burada ürünün ismindeki "X'li" ile karışmaması için kontrol yapıyoruz
+  const liMatches = [...o.matchAll(/(?:^|[^0-9])(\d+)\s*(?:'?[l][ıiuü]|adet)(?:[^a-zçğıöşü]|$)/g)].map(m => parseInt(m[1]));
+  
+  // Eğer siparişteki rakam, ürünün kendi adında geçiyorsa iptal et (Örn: "4 numara", "4'lü" ile karışmasın diye. Ama 4'lü yazıyorsa p'de 4'lü var mı diye bakarız)
+  const pLiMatches = [...p.matchAll(/(?:^|[^0-9])(\d+)\s*(?:'?[l][ıiuü]|adet)(?:[^a-zçğıöşü]|$)/g)].map(m => parseInt(m[1]));
+  
+  // EĞER KULLANICI ÜRÜNE PACKSIZE GİRMEDİYSE BİZ OTOMATİK BULALIM (Örn: 24'lü ürün için 24)
+  if (!packSize && pLiMatches.length > 0) {
+    packSize = Math.max(...pLiMatches);
+  }
+
+  // Sipariş isminden, ürün isminde zaten var olan sayıları çıkart
+  let pureLi = liMatches.filter(val => !pLiMatches.includes(val));
+  
+  // Kalanlar arasında bölme mantığı (Örn: 120 adet, packSize=24 ise 5 paket)
+  for (let val of pureLi) {
+    if (packSize > 1 && val > packSize && val % packSize === 0) {
+      const div = val / packSize;
+      if (div > 1 && div <= 50) return div;
+    }
+  }
+  
+  // Bölme işlemi çalışmadıysa ve kalan sayılardan 2 ile 24 arasında olan varsa, bu bir 'X'li' bundle'dır.
+  for (let val of pureLi) {
+    if (val > 1 && val <= 24) return val;
+  }
+  
+  // 5. Son çare: Sadece ham rakam okuma (Çok yüksek başarı oranı, 120 / 24)
+  if (packSize > 1) {
+    const rawNums = (o.match(/\d+/g) || []).map(Number);
+    for (let r of rawNums) {
+      if (r > packSize && r % packSize === 0) {
+        const div = r / packSize;
+        if (div > 1 && div <= 50) return div;
+      }
+    }
+  }
+
+  return 1;
+}
+
+function getProduct(name){
+  if(!name) return null;
+  const rawName = String(name).toLowerCase();
+  const products = S.products || [];
+  
+  // 1. Manuel Eşleştirme (Alias) Kontrolü (%100 Doğruluk)
+  for(let p of products){
+    if(p.aliases && Array.isArray(p.aliases)){
+      for(let a of p.aliases){
+        if(rawName === String(a).toLowerCase() || rawName.includes(String(a).toLowerCase())){
+          return p;
+        }
+      }
+    } else if (p.aliases && typeof p.aliases === 'string') {
+      // Geriye dönük uyumluluk (eski virgüllü sistem)
+      const als = p.aliases.split(',').map(a=>a.trim().toLowerCase()).filter(a=>a);
+      for(let a of als){
+        if(rawName.includes(a)){
+          return p;
+        }
+      }
+    }
+  }
+
+  // 2. Otomatik (Fuzzy) Eşleştirme
+  const stopWords = ['adet','paket','set','ve','ile','li','lı','lu','lü','için','boy'];
+  const tokens=rawName.replace(/[^\wçğıöşü]/g,' ').split(/\s+/).filter(t=>t.trim().length>0 && !stopWords.includes(t));
+  let bestMatch=null;
+  let bestScore=0;
+  
+  for(let p of products){
+    const pt=p.name.toLowerCase().replace(/[^\wçğıöşü]/g,' ').split(/\s+/).filter(t=>!stopWords.includes(t));
+    let score=0;
+    for(let t of tokens) if(pt.includes(t)) score++;
+    
+    if(score>0){
+      const ratio = score / pt.length;
+      if(score > bestScore || (score === bestScore && ratio > (bestMatch?._ratio||0))){
+        bestScore = score;
+        bestMatch = {...p, _ratio: ratio};
+      }
+    }
+  }
+  if(bestScore > 0){
+    return bestMatch;
+  }
+  return null;
+}
+
+function calcOrderDetails(order,mp){
+  const c=S.settings[mp]||{};
+  const cfg=S.settings||{};
+  const qty=parseInt(order.quantity||1)||1;
+  const sp=TRY(order.salePrice);
+  const totalRev=sp*qty;
+
+  // Product
+  const prod=getProduct(order.productName);
+  const pcUnit=prod?TRY(prod.cost):0;
+  const setMult=getDynamicMultiplier(order.productName, prod);
+  const totalPhysicalQty = qty * setMult;
+  
+  const pcTotal=pcUnit * totalPhysicalQty;
+  let desi;
+  if (order.desi && parseFloat(order.desi) > 0) {
+    desi = parseFloat(order.desi);
+  } else {
+    const desiBase=prod?.desi?TRY(prod.desi):(TRY(c.defaultDesi)||2);
+    desi=desiBase * totalPhysicalQty; 
+  }
+  const kdvRateProd=prod?.kdvRate!==undefined?TRY(prod.kdvRate):(TRY(c.kdvRate)||20);
+
+  let commission, kargo, kargoInfo;
+
+  if(c.calcMode==='excel'){
+    commission=TRY(order.commission);
+    kargo=TRY(order.shippingCost);
+    kargoInfo={price:kargo,type:'excel',label:'Excel verisi',rawKargo:kargo,contrib:0};
+  } else {
+    // Commission
+    if(mp==='trendyol'){
+      commission=totalRev*(TRY(c.commRate)||14)/100;
+    } else if(mp==='hepsiburada'){
+      const base=totalRev*(TRY(c.commRate)||13)/100;
+      commission=base*(1+(TRY(c.commKdvRate)||20)/100);
+    } else {
+      commission=0;
+    }
+    // Barem limitleri birim fiyata değil, toplam sipariş tutarına göre hesaplanır.
+    kargoInfo=calcKargo(mp,totalRev,desi,order);
+    kargo=kargoInfo.price;
+  }
+
+  // Stopaj
+  const stopaj=totalRev*(TRY(c.stopajRate)||1)/100;
+  // Sabit hizmet (per order/row)
+  const sabitHizmet=mp==='temu'?0:TRY(c.sabitHizmet);
+  // Tahsilat (HB only)
+  const tahsilat=mp==='hepsiburada'?totalRev*(TRY(c.tahsilatRate)||1)/100:0;
+
+  // KDV (opsiyonel)
+  let kdv=0;
+  if(cfg.kdvEnabled){
+    const kdvR=(TRY(c.kdvRate)||20)/100;
+    const kdvSale=totalRev-totalRev/(1+kdvR);
+    const kdvProd=pcTotal*(kdvRateProd/100); // indirebilir (maliyet KDV'siz varsayımı)
+    const kdvKargo=kargo-kargo/1.20;
+    kdv=Math.max(0,kdvSale-kdvProd-kdvKargo);
+  }
+
+  // Net tutar (marketplace pays seller)
+  const netTutar=totalRev-commission-kargo;
+
+  // Net profit
+  let netProfit;
+  if(mp==='trendyol'||mp==='hepsiburada'){
+    netProfit=netTutar-pcTotal-stopaj-tahsilat-sabitHizmet-kdv;
+  } else {
+    // temu
+    netProfit=totalRev-commission-kargo-pcTotal-stopaj-kdv;
+  }
+  const cpo=(commission+kargo+stopaj+sabitHizmet+tahsilat)/totalRev;
+  const roas=totalRev/(commission+kargo+sabitHizmet);
+
+  return{...order,qty,totalRev,pcUnit,setMult,totalPhysicalQty,pcTotal,desi,commission,kargo,kargoInfo,stopaj,sabitHizmet,tahsilat,kdv,netTutar,netProfit,cpo,roas,matchedProductName:prod?prod.name:null,matchedPackSize:prod?prod.packSize:null};
+}
+
+function calcOrderProfit(order,mp){return calcOrderDetails(order,mp).netProfit}
+
+let currentGlobalDateFilter = localStorage.getItem('globalDateFilter') || 'all';
+
+function applyDateFilter(){
+  currentGlobalDateFilter = document.getElementById('global-date-filter').value;
+  localStorage.setItem('globalDateFilter', currentGlobalDateFilter);
+  const activePanel = document.querySelector('.tab-panel.active').id.replace('panel-','');
+  if(activePanel === 'dashboard') renderDashboard();
+  else if(['trendyol','hepsiburada','temu'].includes(activePanel)) renderMP(activePanel);
+  else if(activePanel === 'analiz') renderAnaliz();
+}
+
+function getFilteredOrders(mp = null) {
+  let orders = mp ? (S[mp]?.orders||[]).map((o,i)=>({...o,_mp:mp,_idx:i})) : allOrders();
+  if (currentGlobalDateFilter === 'all') return orders;
+  
+  const now = new Date();
+  const filterVal = currentGlobalDateFilter;
+  
+  return orders.filter(o => {
+    if (!o.date) return false;
+    let dt = new Date(o.date);
+    if(isNaN(dt) && typeof o.date==='string'){
+       const parts=o.date.split('.');
+       if(parts.length===3) dt=new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+    }
+    if (isNaN(dt)) return false;
+    
+    if (filterVal === '7d') {
+      return (now - dt) <= 7 * 24 * 60 * 60 * 1000;
+    } else if (filterVal === '30d') {
+      return (now - dt) <= 30 * 24 * 60 * 60 * 1000;
+    } else if (filterVal === 'thisMonth') {
+      return dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear();
+    } else if (filterVal === 'lastMonth') {
+      let lm = now.getMonth() - 1;
+      let y = now.getFullYear();
+      if(lm < 0){ lm = 11; y--; }
+      return dt.getMonth() === lm && dt.getFullYear() === y;
+    } else {
+      const mStr = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`;
+      return filterVal === mStr;
+    }
+  });
+}
+
+function getMonthlyData(){
+  const m={};const MN=['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+  allOrders().forEach(o=>{
+    if(!o.date)return;
+    let dt=new Date(o.date);
+    if(isNaN(dt) && typeof o.date==='string'){
+       const parts=o.date.split('.');
+       if(parts.length===3) dt=new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+    }
+    if(isNaN(dt))return;
+    const k=`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`;
+    if(!m[k])m[k]={ty:0,hp:0,temu:0};
+    const rev=TRY(o.salePrice)*(parseInt(o.quantity||1)||1);
+    if(o._mp==='trendyol')m[k].ty+=rev;
+    if(o._mp==='hepsiburada')m[k].hp+=rev;
+    if(o._mp==='temu')m[k].temu+=rev
+  });
+  const sorted=Object.keys(m).sort().slice(-12);
+  return{labels:sorted.map(k=>{const[y,mo]=k.split('-');return MN[+mo-1]+' '+y.slice(2)}),ty:sorted.map(k=>m[k].ty),hp:sorted.map(k=>m[k].hp),temu:sorted.map(k=>m[k].temu)};
+}
+
+function populateMonthFilter(){
+  const mn = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+  const mSet = new Set();
+  allOrders().forEach(o=>{
+    if(!o.date) return;
+    let dt = new Date(o.date);
+    if(isNaN(dt) && typeof o.date==='string'){
+       const parts=o.date.split('.');
+       if(parts.length===3) dt=new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+    }
+    if(isNaN(dt)) return;
+    mSet.add(`${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`);
+  });
+  const sorted = Array.from(mSet).sort().reverse();
+  const optgroup = document.getElementById('month-filter-opts');
+  optgroup.innerHTML = '';
+  sorted.forEach(k => {
+    const [y, m] = k.split('-');
+    const label = mn[+m-1] + ' ' + y;
+    const opt = document.createElement('option');
+    opt.value = k;
+    opt.textContent = label;
+    optgroup.appendChild(opt);
+  });
+  document.getElementById('global-date-filter').value = currentGlobalDateFilter;
+}
+
+function getFilteredExpenses() {
+  let exps = S.expenses || [];
+  if (currentGlobalDateFilter === 'all') return exps;
+  
+  const now = new Date();
+  const filterVal = currentGlobalDateFilter;
+  
+  return exps.filter(e => {
+    if (!e.date) return false;
+    let dt = new Date(e.date);
+    if(isNaN(dt) && typeof e.date==='string'){
+       const parts=e.date.split('.');
+       if(parts.length===3) dt=new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+    }
+    if (isNaN(dt)) return false;
+    
+    if (filterVal === '7d') {
+      return (now - dt) <= 7 * 24 * 60 * 60 * 1000;
+    } else if (filterVal === '30d') {
+      return (now - dt) <= 30 * 24 * 60 * 60 * 1000;
+    } else if (filterVal === 'thisMonth') {
+      return dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear();
+    } else if (filterVal === 'lastMonth') {
+      let lm = now.getMonth() - 1;
+      let y = now.getFullYear();
+      if(lm < 0){ lm = 11; y--; }
+      return dt.getMonth() === lm && dt.getFullYear() === y;
+    } else {
+      const mStr = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`;
+      return filterVal === mStr;
+    }
+  });
+}
+
+function calcMPStats(mp){
+  const orders=getFilteredOrders(mp);
+  let rev=0,comm=0,kargo=0,stopaj=0,sh=0,tah=0,pc=0,kdv=0,profit=0;
+  orders.forEach(o=>{
+    const d=calcOrderDetails(o,mp);
+    rev+=d.totalRev;comm+=d.commission;kargo+=d.kargo;stopaj+=d.stopaj;
+    sh+=d.sabitHizmet;tah+=d.tahsilat;pc+=d.pcTotal;kdv+=d.kdv;profit+=d.netProfit;
+  });
+  return{rev,comm,kargo,stopaj,sh,tah,pc,kdv,profit,count:orders.length};
+}
+
+function calcGlobal(){
+  const g={rev:0,comm:0,kargo:0,stopaj:0,sh:0,tah:0,pc:0,kdv:0,profit:0,count:0};
+  ['trendyol','hepsiburada','temu'].forEach(mp=>{const s=calcMPStats(mp);Object.keys(g).forEach(k=>{g[k]+=(s[k]||0)})});
+  g.expTotal=getFilteredExpenses().reduce((s,e)=>s+TRY(e.amount),0);
+  g.netProfit=g.profit-g.expTotal;
+  return g;
+}
+
+function allOrders(){
+  const all=[];
+  ['trendyol','hepsiburada','temu'].forEach(mp=>(S[mp]?.orders||[]).forEach((o,i)=>all.push({...o,_mp:mp,_idx:i})));
+  return all.sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+}
+
+// ═══════════════════════════════════════════
+// ORDER DETAIL MODAL
+// ═══════════════════════════════════════════
+function showDetail(mp,idx){
+  const order=S[mp]?.orders?.[idx];if(!order)return;
+  const d=calcOrderDetails(order,mp);
+  const mpN={trendyol:'🟠 Trendyol',hepsiburada:'🟡 Hepsiburada',temu:'🟣 Temu'};
+  const kargoBadge=d.kargoInfo.type==='barem'?'<span class="badge b-br">Barem</span>':'<span class="badge b-ds">Desi</span>';
+  const modeWarn=S.settings[mp]?.calcMode==='excel'?'<div class="ib wa" style="margin-bottom:10px">⚠️ Excel modunda: komisyon ve kargo Excel\'den alınıyor.</div>':'';
+
+  document.getElementById('detail-title').textContent=`📊 ${mpN[mp]} — Maliyet Detayı`;
+  document.getElementById('detail-body').innerHTML=`
+    ${modeWarn}
+    <div style="font-size:12px;color:var(--text2);margin-bottom:10px">${esc(order.productName||'Ürün')} · ${d.qty} Sipariş${d.setMult>1?` (x${d.setMult} Set)`:''} · ${d.desi} desi</div>
+    <div class="dsec">
+      <div class="dsec-t">Gelir</div>
+      <div class="drow"><span>Birim Satış Fiyatı</span><span>${fmt(d.salePrice)}</span></div>
+      ${d.qty>1?`<div class="drow sub"><span>× ${d.qty} adet</span><span>${fmt(d.totalRev)}</span></div>`:''}
+    </div>
+    <div class="dsec">
+      <div class="dsec-t">Pazaryeri Kesintileri</div>
+      <div class="drow"><span>Komisyon${mp==='hepsiburada'?` (%${S.settings.hepsiburada.commRate} + %${S.settings.hepsiburada.commKdvRate} KDV)`:mp==='trendyol'?` (%${S.settings.trendyol.commRate})`:'(Yok)'}</span><span class="neg">−${fmt(d.commission)}</span></div>
+      <div class="drow"><span>Kargo ${kargoBadge}<br><small style="color:var(--text2)">${esc(d.kargoInfo.label)}</small></span><span class="neg">−${fmt(d.kargo)}</span></div>
+      ${d.kargoInfo.contrib>0?`<div class="drow sub"><span>Müşteri kargo katkısı</span><span class="pos">+${fmt(d.kargoInfo.contrib)}</span></div>`:''}
+      <div class="drow" style="border-top:1px dashed var(--border);margin-top:4px"><span style="font-weight:600">Pazaryeri Net Ödemesi</span><span style="font-weight:600">${fmt(d.netTutar)}</span></div>
+    </div>
+    <div class="dsec">
+      <div class="dsec-t">Satıcı Giderleri</div>
+      <div class="drow"><span>Ürün Maliyeti${d.prod?'':' <small style="color:var(--warn)">(tanımsız)</small>'}${d.setMult>1?` <small style="color:var(--accent);font-weight:600"><br>(${d.qty} Sipariş × ${d.setMult} Set = ${d.qty*d.setMult} Fiziksel Ürün)</small>`:''}</span><span class="neg">−${fmt(d.pcTotal)}</span></div>
+      <div class="drow"><span>Stopaj (%${S.settings[mp]?.stopajRate||1})</span><span class="neg">−${fmt(d.stopaj)}</span></div>
+      ${d.sabitHizmet>0?`<div class="drow"><span>Sabit Hizmet Bedeli</span><span class="neg">−${fmt(d.sabitHizmet)}</span></div>`:''}
+      ${d.tahsilat>0?`<div class="drow"><span>Tahsilat Bedeli (%${S.settings.hepsiburada?.tahsilatRate||1})</span><span class="neg">−${fmt(d.tahsilat)}</span></div>`:''}
+      ${S.settings.kdvEnabled?`<div class="drow"><span>KDV (net ödenecek)</span><span class="neg">−${fmt(d.kdv)}</span></div>`:'<div class="drow sub"><span>KDV hesabı kapalı (Ayarlar\'dan açılabilir)</span><span>—</span></div>'}
+    </div>
+    <div class="drow total"><span>NET KAR</span><span class="${clr(d.netProfit)}">${fmt(d.netProfit)}</span></div>
+    ${d.totalRev>0?`<div style="font-size:11.5px;color:var(--text2);text-align:right;margin-top:6px">Net marj: %${pct(d.netProfit,d.totalRev)}</div>`:''}
+  `;
+  document.getElementById('modal-detail').style.display='flex';
+}
+
+// ═══════════════════════════════════════════
+// CHARTS
+// ═══════════════════════════════════════════
+const CHS={};
+function killChart(id){if(CHS[id]){CHS[id].destroy();delete CHS[id]}}
+const CDef={responsive:true,maintainAspectRatio:false,animation:{duration:1200,easing:'easeOutQuart'},plugins:{legend:{labels:{color:'#7b80a0',font:{family:'Outfit',size:11}}},tooltip:{backgroundColor:'rgba(15,23,42,0.92)',titleColor:'#fff',bodyColor:'#e2e8f0',borderColor:'rgba(255,255,255,0.08)',borderWidth:1,padding:12,boxPadding:6,cornerRadius:8,callbacks:{label:function(c){let l=c.dataset.label||'';if(l)l+=': ';let v=c.raw!==undefined?c.raw:(c.parsed.y!==null&&c.parsed.y!==undefined?c.parsed.y:c.parsed.x);if(typeof v==='number')l+='₺'+v.toLocaleString('tr-TR',{minimumFractionDigits:2});return l}}}}};
+const CGrid={color:'rgba(255,255,255,0.04)'};
+const CTick=c=>({color:c,font:{family:'Outfit',size:11}});
+
+// ═══════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════
+function renderDashboard(){
+  const g=calcGlobal(),ty=calcMPStats('trendyol'),hp=calcMPStats('hepsiburada'),te=calcMPStats('temu');
+  
+  let daysDiff = 1;
+  if(g.count > 0) {
+    const dates = allOrders().map(o=>new Date(o.date)).filter(d=>!isNaN(d));
+    if(dates.length>1) {
+      const minD = new Date(Math.min(...dates));
+      const maxD = new Date(Math.max(...dates));
+      daysDiff = Math.max(1, Math.ceil((maxD - minD)/(1000*60*60*24)));
+    }
+  }
+  const dailyKargo = g.kargo / daysDiff;
+  const dailyComm = g.comm / daysDiff;
+  const dailyProfit = g.netProfit / daysDiff;
+  const dailyRev = g.rev / daysDiff;
+  
+  const projHtml = g.count > 0 ? `
+  <div class="card" style="margin-bottom:24px; background:linear-gradient(135deg, rgba(129,140,248,0.07) 0%, rgba(192,132,252,0.03) 100%); border:1px solid rgba(129,140,248,0.18); border-left:4px solid var(--accent); padding:20px; border-radius:16px; box-shadow: var(--shadow);">
+    <div style="font-size:16px;font-weight:700;color:#a5b4fc;display:flex;align-items:center;gap:10px">
+      <span class="ai-pulse-ok" style="flex-shrink:0" title="Aktif"></span>
+      ${AI_SPARK_SVG('#a5b4fc', 'rgba(129,140,248,0.6)')} Yapay Zeka Gelecek Ay Projeksiyonu
+    </div>
+    <div style="font-size:13px;color:var(--text2);margin-top:8px;margin-bottom:18px;line-height:1.5">Mevcut satış hızınıza (${daysDiff} günlük periyot) dayanarak önümüzdeki 30 gün için tahmin edilen gerçekleşmeler:</div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <div style="flex:1;min-width:140px;background:rgba(10,10,12,0.6);padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);box-shadow:inset 0 1px 0 rgba(255,255,255,0.03);transition:transform 0.2s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+        <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:600">Beklenen Ciro</div>
+        <div style="font-size:20px;font-weight:700;color:var(--text)">${fmt(dailyRev*30)}</div>
+      </div>
+      <div style="flex:1;min-width:140px;background:rgba(10,10,12,0.6);padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);box-shadow:inset 0 1px 0 rgba(255,255,255,0.03);transition:transform 0.2s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+        <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:600">Tahmini Kargo Yükü</div>
+        <div style="font-size:20px;font-weight:700;color:var(--bad)">${fmt(dailyKargo*30)}</div>
+      </div>
+      <div style="flex:1;min-width:140px;background:rgba(10,10,12,0.6);padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);box-shadow:inset 0 1px 0 rgba(255,255,255,0.03);transition:transform 0.2s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+        <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:600">Tahmini Komisyon</div>
+        <div style="font-size:20px;font-weight:700;color:var(--warn)">${fmt(dailyComm*30)}</div>
+      </div>
+      <div style="flex:1;min-width:140px;background:rgba(10,10,12,0.6);padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);box-shadow:inset 0 1px 0 rgba(255,255,255,0.03);transition:transform 0.2s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+        <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:600">Beklenen Net Kâr</div>
+        <div style="font-size:20px;font-weight:700;color:var(--ok)">${fmt(dailyProfit*30)}</div>
+      </div>
+    </div>
+  </div>
+  ` : '';
+
+  document.getElementById('db-stats').innerHTML=`
+    ${projHtml}
+    <div class="sgrid">
+      <div class="sc ac"><div class="sl">Toplam Ciro</div><div class="sv">${fmt(g.rev)}</div><div class="ss">${fmtN(g.count)} sipariş</div></div>
+      <div class="sc ok"><div class="sl">Net Kâr</div><div class="sv ${clr(g.netProfit)}">${fmt(g.netProfit)}</div><div class="ss">Net Kâr Oranı: <strong class="${clr(g.netProfit)}">%${pct(g.netProfit,g.rev)}</strong></div></div>
+      <div class="sc wa"><div class="sl">Toplam Komisyon</div><div class="sv">${fmt(g.comm)}</div><div class="ss">%${pct(g.comm,g.rev)}</div></div>
+      <div class="sc ba"><div class="sl">Toplam Kargo</div><div class="sv">${fmt(g.kargo)}</div><div class="ss">Stopaj: ${fmt(g.stopaj)} · Hizmet: ${fmt(g.sh)}</div></div>
+      <div class="sc ty"><div class="sl">🟠 Trendyol</div><div class="sv">${fmt(ty.rev)}</div><div class="ss">Kâr: <span class="${clr(ty.profit)}">${fmt(ty.profit)}</span> (%${pct(ty.profit,ty.rev)}) · ${ty.count} sip.</div></div>
+      <div class="sc hp"><div class="sl">🟡 Hepsiburada</div><div class="sv">${fmt(hp.rev)}</div><div class="ss">Kâr: <span class="${clr(hp.profit)}">${fmt(hp.profit)}</span> (%${pct(hp.profit,hp.rev)}) · ${hp.count} sip.</div></div>
+      <div class="sc tm"><div class="sl">🟣 Temu</div><div class="sv">${fmt(te.rev)}</div><div class="ss">Kâr: <span class="${clr(te.profit)}">${fmt(te.profit)}</span> (%${pct(te.profit,te.rev)}) · ${te.count} sip.</div></div>
+    </div>
+  `;
+  renderDBCharts(g,ty,hp,te);
+  renderRecentOrders();
+  setTimeout(runCounters, 100);
+}
+
+function renderDBCharts(g,ty,hp,te){
+  if (typeof Chart === 'undefined') { console.warn('Chart.js yüklenemedi. Grafikler devre dışı bırakıldı.'); return; }
+  killChart('mp');
+  const c1=document.getElementById('ch-mp');
+  if(c1)CHS['mp']=new Chart(c1,{type:'doughnut',data:{labels:['Trendyol','Hepsiburada','Temu'],datasets:[{data:[ty.rev,hp.rev,te.rev],backgroundColor:['rgba(242,122,26,.85)','rgba(192,132,252,.85)','rgba(96,165,250,.85)'],borderColor:'#161928',borderWidth:2}]},options:{...CDef,cutout:'65%'}});
+  
+  killChart('mon');
+  const c2=document.getElementById('ch-mon');
+  if(c2){
+    const md=getMonthlyData();
+    const ctx2d = c2.getContext('2d');
+    const gradTy = ctx2d.createLinearGradient(0, 0, 0, 250);
+    gradTy.addColorStop(0, 'rgba(242,122,26,.85)');
+    gradTy.addColorStop(1, 'rgba(242,122,26,.15)');
+    const gradHp = ctx2d.createLinearGradient(0, 0, 0, 250);
+    gradHp.addColorStop(0, 'rgba(192,132,252,.85)');
+    gradHp.addColorStop(1, 'rgba(192,132,252,.15)');
+    const gradTemu = ctx2d.createLinearGradient(0, 0, 0, 250);
+    gradTemu.addColorStop(0, 'rgba(96,165,250,.85)');
+    gradTemu.addColorStop(1, 'rgba(96,165,250,.15)');
+    
+    CHS['mon']=new Chart(c2,{type:'bar',data:{labels:md.labels,datasets:[{label:'Trendyol',data:md.ty,backgroundColor:gradTy,borderRadius:4},{label:'Hepsiburada',data:md.hp,backgroundColor:gradHp,borderRadius:4},{label:'Temu',data:md.temu,backgroundColor:gradTemu,borderRadius:4}]},options:{...CDef,scales:{x:{stacked:true,ticks:CTick('#7b80a0'),grid:CGrid},y:{stacked:true,ticks:{...CTick('#7b80a0'),callback:v=>'₺'+v},grid:CGrid}}}});
+  }
+  
+  killChart('pnl');
+  const c3=document.getElementById('ch-pnl');
+  if(c3){
+    const ctx2d = c3.getContext('2d');
+    const gradAccent = ctx2d.createLinearGradient(0, 0, 0, 250);
+    gradAccent.addColorStop(0, 'rgba(108,99,255,.85)');
+    gradAccent.addColorStop(1, 'rgba(108,99,255,.2)');
+    const gradWarn = ctx2d.createLinearGradient(0, 0, 0, 250);
+    gradWarn.addColorStop(0, 'rgba(245,158,11,.85)');
+    gradWarn.addColorStop(1, 'rgba(245,158,11,.2)');
+    const gradBad = ctx2d.createLinearGradient(0, 0, 0, 250);
+    gradBad.addColorStop(0, 'rgba(239,68,68,.85)');
+    gradBad.addColorStop(1, 'rgba(239,68,68,.2)');
+    const gradOk = ctx2d.createLinearGradient(0, 0, 0, 250);
+    gradOk.addColorStop(0, 'rgba(34,197,94,.85)');
+    gradOk.addColorStop(1, 'rgba(34,197,94,.2)');
+    
+    CHS['pnl']=new Chart(c3,{type:'bar',data:{labels:['Ciro','Komisyon','Kargo','Stopaj','Hizmet/Tah.','Ürün Mal.','Sabit Gider','Net Kâr'],datasets:[{data:[g.rev,g.comm,g.kargo,g.stopaj,g.sh+g.tah,g.pc,g.expTotal,Math.abs(g.netProfit)],backgroundColor:[gradAccent,gradWarn,gradBad,gradBad,gradBad,gradBad,gradBad,g.netProfit>=0?gradOk:gradBad],borderRadius:4}]},options:{...CDef,scales:{x:{ticks:{...CTick('#7b80a0'),font:{family:'Outfit',size:10}},grid:CGrid},y:{ticks:{...CTick('#7b80a0'),callback:v=>'₺'+v},grid:CGrid}},plugins:{legend:{display:false}}}});
+  }
+  
+  killChart('exp');
+  const c4=document.getElementById('ch-exp');
+  if(c4){const cats={};(S.expenses||[]).forEach(e=>{cats[e.category]=(cats[e.category]||0)+TRY(e.amount)});if(g.comm>0)cats['Komisyon(MP)']=(cats['Komisyon(MP)']||0)+g.comm;if(g.kargo>0)cats['Kargo(Sip.)']=(cats['Kargo(Sip.)']||0)+g.kargo;const cols=['#818cf8','#f97316','#34d399','#f87171','#fbbf24','#06b6d4','#ec4899','#c084fc'];CHS['exp']=new Chart(c4,{type:'doughnut',data:{labels:Object.keys(cats),datasets:[{data:Object.values(cats),backgroundColor:cols.slice(0,Object.keys(cats).length),borderColor:'#161928',borderWidth:2}]},options:{...CDef,cutout:'60%'}})}
+}
+
+// ═══════════════════════════════════════════
+// MARKETPLACE PAGE
+// ═══════════════════════════════════════════
+function renderMP(mp){
+  const cfg=MP[mp],sts=calcMPStats(mp),orders=getFilteredOrders(mp);
+  const c=S.settings[mp]||{};
+  const modeLabel=c.calcMode==='excel'?'📂 Excel Modu — komisyon ve kargo Excel\'den alınıyor':'⚙️ Otomatik Hesaplama — barem/desi formülü uygulanıyor';
+
+  document.getElementById(`mp-${mp}`).innerHTML=`
+    <div class="mphead ${cfg.hcls}">
+      <div><div class="mpn">${cfg.icon} ${cfg.name}</div><div class="mps">${fmtN(orders.length)} sipariş yüklendi${orders.length>0?' · '+orders[0]?.date:''}</div></div>
+      ${orders.length?`<button class="btn bd sm" onclick="clearMP('${mp}')">🗑 Temizle</button>`:''}
+    </div>
+    <div class="sgrid">
+      <div class="sc ${cfg.cls}"><div class="sl">Toplam Ciro</div><div class="sv">${fmt(sts.rev)}</div><div class="ss">${fmtN(sts.count)} sipariş</div></div>
+      <div class="sc ok"><div class="sl">Net Kâr</div><div class="sv ${clr(sts.profit)}">${fmt(sts.profit)}</div><div class="ss">Net Kâr Oranı: <strong class="${clr(sts.profit)}">%${pct(sts.profit,sts.rev)}</strong></div></div>
+      <div class="sc wa"><div class="sl">Komisyon</div><div class="sv">${fmt(sts.comm)}</div><div class="ss">%${pct(sts.comm,sts.rev)}</div></div>
+      <div class="sc ba"><div class="sl">Kargo</div><div class="sv">${fmt(sts.kargo)}</div><div class="ss">Ort: ${fmt(sts.count>0?sts.kargo/sts.count:0)}/sipariş</div></div>
+      <div class="sc ba"><div class="sl">Stopaj</div><div class="sv">${fmt(sts.stopaj)}</div><div class="ss">%${c.stopajRate||1}</div></div>
+      <div class="sc ba"><div class="sl">${mp==='hepsiburada'?'Sabit + Tahsilat':'Sabit Hizmet'}</div><div class="sv">${fmt(sts.sh+sts.tah)}</div></div>
+    </div>
+    <div class="calcbanner">
+      <span class="cbi">ℹ️</span>
+      <div><strong>${modeLabel}</strong><br><small style="color:var(--text2)">Ayarlar sayfasından hesaplama modunu ve parametreleri değiştirebilirsiniz. Her sipariş satırındaki 📊 butonuna tıklayarak detaylı kırılımı görebilirsiniz.</small></div>
+    </div>
+    <div class="ubox">
+      <div class="sh"><div><strong>${cfg.icon} Excel / CSV İçe Aktar</strong><br><small style="color:var(--text2)">.xlsx, .xls, .csv desteklenir — sütunlar otomatik eşleştirilir</small></div></div>
+      <div class="uarea" id="ua-${mp}" ondragover="event.preventDefault();this.classList.add('dv')" ondragleave="this.classList.remove('dv')" ondrop="onDrop(event,'${mp}')" onclick="document.getElementById('fi-${mp}').click()">
+        <svg class="ui" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent); margin: 0 auto 12px; display: block; filter: drop-shadow(0 0 8px var(--accent-glow));"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <div class="ut">Excel/CSV sürükle veya tıkla</div><div class="us">${cfg.name} sipariş raporunu yükleyin</div>
+      </div>
+      <input type="file" id="fi-${mp}" style="display:none" accept=".xlsx,.xls,.csv" onchange="onFileSelect(event,'${mp}')"/>
+    </div>
+    <div class="tw">
+      <div class="th"><div class="tt">Siparişler <span style="color:var(--text2);font-weight:400">(${fmtN(orders.length)})</span></div>
+        <div class="ta"><input style="max-width:230px" placeholder="🔍 Ara…" oninput="filterMP('${mp}',this.value)"/>
+        ${orders.length?`<button class="btn bs sm" onclick="exportCSV('${mp}')">⬇ CSV</button>`:''}
+        </div>
+      </div>
+      <div class="ts" id="ot-${mp}">${buildTable(orders.map((o,i)=>({...o,_mp:mp,_idx:i})))}</div>
+    </div>
+  `;
+  setTimeout(runCounters, 100);
+}
+
+function filterMP(mp,q){
+  const orders=getFilteredOrders(mp);
+  const f=q?orders.filter(o=>JSON.stringify(o).toLowerCase().includes(q.toLowerCase())):orders;
+  document.getElementById(`ot-${mp}`).innerHTML=buildTable(f);
+}
+function clearMP(mp){if(!confirm(`${MP[mp].name} verilerini silmek istediğinizden emin misiniz?`))return;S[mp].orders=[];saveState();renderMP(mp);updateBadges()}
+
+// ═══════════════════════════════════════════
+// TABLE BUILDER
+// ═══════════════════════════════════════════
+function buildTable(orders,showMP=false){
+  if(!orders.length)return`<div class="empty"><div class="ei">📭</div><h3>Sipariş bulunamadı</h3><p>Excel dosyası yükleyin.</p></div>`;
+  let tRev=0,tComm=0,tKargo=0,tStop=0,tSH=0,tTah=0,tPC=0,tProfit=0;
+  const rows=orders.map((o,i)=>{
+    const mp=o._mp||'trendyol';
+    const d=calcOrderDetails(o,mp);
+    tRev+=d.totalRev;tComm+=d.commission;tKargo+=d.kargo;tStop+=d.stopaj;tSH+=d.sabitHizmet;tTah+=d.tahsilat;tPC+=d.pcTotal;tProfit+=d.netProfit;
+    const mpBadge=showMP?`<td><span class="badge b-${o._mp==='trendyol'?'ty':o._mp==='hepsiburada'?'hp':'tm'}">${MP[o._mp]?.icon} ${MP[o._mp]?.name}</span></td>`:'';
+    const kBadge=d.kargoInfo.type==='barem'?'<span class="badge b-br" style="font-size:9px">B</span>':'<span class="badge b-ds" style="font-size:9px">D</span>';
+    const detailBtn=o._idx!==undefined?`<button class="btn bs sm" onclick="showDetail('${mp}',${o._idx})" title="Maliyet Detayı">📊</button>`:'';
+    return`<tr style="background:${d.netProfit<0?'rgba(239,68,68,0.08)':(d.netProfit/d.totalRev>=0.2?'rgba(34,197,94,0.06)':'')}">
+      <td style="color:var(--text2)">${i+1}</td>
+      ${mpBadge}
+      <td style="font-size:11px;color:var(--text2)">${esc(o.orderNo||'-')}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="Sipariş Adı: ${esc(o.productName||'')}&#10;Eşleşen Veritabanı Ürünü: ${esc(d.matchedProductName||'Bulunamadı')}">
+        ${esc(o.productName||'-')}
+        <div style="font-size:10px;color:var(--text2);margin-top:2px">Eşleşen: <span style="color:var(--accent)">${esc(d.matchedProductName||'Bilinmiyor')}</span> ${d.matchedPackSize?`(P:${d.matchedPackSize})`:''}</div>
+      </td>
+      <td style="text-align:right" title="Müşteri ${d.qty} adet sipariş verdi. Otomatik algılanan paket/set çarpanı: ${d.setMult}x">${d.qty}${d.setMult>1?` <span style="font-size:10px;color:var(--accent);font-weight:600">x${d.setMult}</span>`:''}</td>
+      <td style="text-align:right">${fmt(d.totalRev)}</td>
+      <td style="text-align:right;color:var(--warn)">${fmt(d.commission)}</td>
+      <td style="text-align:right;color:var(--bad)" title="${d.kargoInfo.label}">
+        ${fmt(d.kargo)} <span style="font-size:10px;color:var(--text2);font-weight:500;margin-right:2px">(${(d.desi).toFixed(1).replace('.0','')}d)</span> ${kBadge}
+      </td>
+      <td style="text-align:right;color:var(--bad)">${fmt(d.stopaj)}</td>
+      <td style="text-align:right;color:var(--bad)">${d.sabitHizmet+d.tahsilat>0?fmt(d.sabitHizmet+d.tahsilat):'-'}</td>
+      <td style="text-align:right;color:var(--text2)">${d.pcTotal>0?fmt(d.pcTotal):'-'}</td>
+      <td style="text-align:right;font-weight:600" class="${clr(d.netProfit)}">${fmt(d.netProfit)} <span style="font-size:10px;opacity:0.8;margin-left:2px">(%${d.totalRev>0?Math.round((d.netProfit/d.totalRev)*100):0})</span></td>
+      <td style="font-size:11px;color:var(--text2)">${o.date||'-'}</td>
+      <td>${detailBtn}</td>
+    </tr>`;
+  });
+  const colSpanBase=showMP?5:4;
+  const tid = 'tbl-'+Math.random().toString(36).slice(2,9);
+  return`<table id="${tid}">
+    <thead><tr>
+      <th>#</th>${showMP?'<th>Pazar</th>':''}
+      <th>Sipariş No</th><th>Ürün</th>
+      <th style="text-align:right;cursor:pointer" onclick="sortTable('${tid}',${showMP?4:3},'num',this)" title="Sırala">Adet ↕</th>
+      <th style="text-align:right;cursor:pointer" onclick="sortTable('${tid}',${showMP?5:4},'num',this)" title="Sırala">Gelir ↕</th>
+      <th style="text-align:right;cursor:pointer" onclick="sortTable('${tid}',${showMP?6:5},'num',this)" title="Sırala">Komisyon ↕</th>
+      <th style="text-align:right">Kargo</th><th style="text-align:right">Stopaj</th><th style="text-align:right">Hizmet/Tah.</th>
+      <th style="text-align:right;cursor:pointer" onclick="sortTable('${tid}',${showMP?10:9},'num',this)" title="Sırala">Ürün Mal. ↕</th>
+      <th style="text-align:right;cursor:pointer;color:var(--accent)" onclick="sortTable('${tid}',${showMP?11:10},'num',this)" title="Sırala">Net Kâr ↕</th>
+      <th>Tarih</th><th></th>
+    </tr></thead>
+    <tbody>${rows.join('')}</tbody>
+    <tfoot><tr>
+      <td colspan="${colSpanBase}" style="padding:8px 12px">TOPLAM (${fmtN(orders.length)})</td>
+      <td style="text-align:right">${fmt(tRev)}</td>
+      <td style="text-align:right;color:var(--warn)">${fmt(tComm)}</td>
+      <td style="text-align:right;color:var(--bad)">${fmt(tKargo)}</td>
+      <td style="text-align:right;color:var(--bad)">${fmt(tStop)}</td>
+      <td style="text-align:right;color:var(--bad)">${fmt(tSH+tTah)}</td>
+      <td style="text-align:right">${fmt(tPC)}</td>
+      <td style="text-align:right;font-weight:700" class="${clr(tProfit)}">${fmt(tProfit)} <span style="font-size:10px;opacity:0.8;margin-left:2px">(%${tRev>0?Math.round((tProfit/tRev)*100):0})</span></td>
+      <td colspan="2"></td>
+    </tr></tfoot>
+  </table>`;
+}
+
+// ═══════════════════════════════════════════
+// EXCEL IMPORT
+// ═══════════════════════════════════════════
+let pending={mp:'',headers:[],rows:[]};
+function onDrop(e,mp){e.preventDefault();document.getElementById(`ua-${mp}`).classList.remove('dv');const f=e.dataTransfer.files[0];if(f)processFile(f,mp)}
+function onFileSelect(e,mp){const f=e.target.files[0];if(f)processFile(f,mp);e.target.value=''}
+function processFile(file,mp){
+  const r=new FileReader();
+  r.onload=ev=>{try{
+    let data;
+    if(file.name.toLowerCase().endsWith('.csv')){
+      const buf=new Uint8Array(ev.target.result);
+      let txt;
+      if(buf[0]===0xEF&&buf[1]===0xBB&&buf[2]===0xBF) txt=new TextDecoder('utf-8').decode(buf);
+      else txt=new TextDecoder('windows-1254').decode(buf);
+      if(txt.charCodeAt(0)===0xFEFF) txt=txt.slice(1);
+      
+      let sep=',';
+      const lines=txt.split('\n');
+      for(let l of lines){
+        if(l.trim().length>0){if(l.includes(';'))sep=';';break;}
+      }
+      
+      data=[];
+      let curRow=[], curVal='', inQ=false;
+      for(let i=0;i<txt.length;i++){
+        let c=txt[i];
+        if(inQ){
+          if(c==='"'){if(txt[i+1]==='"'){curVal+='"';i++;}else inQ=false;}
+          else curVal+=c;
+        }else{
+          if(c==='"')inQ=true;
+          else if(c===sep){curRow.push(curVal);curVal='';}
+          else if(c==='\n'||c==='\r'){
+            if(c==='\r'&&txt[i+1]==='\n')i++;
+            if(curRow.length>0||curVal)curRow.push(curVal);
+            if(curRow.length>0)data.push(curRow);
+            curRow=[];curVal='';
+          }else curVal+=c;
+        }
+      }
+      if(curRow.length>0||curVal){curRow.push(curVal);data.push(curRow);}
+    } else {
+      const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:false});
+      data=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});
+    }
+    
+    let hIdx=0;
+    for(let i=0;i<Math.min(5,data.length);i++){if(data[i].filter(c=>String(c||'').trim()).length>=3){hIdx=i;break}}
+    const headers=data[hIdx].map(h=>String(h||'').trim());
+    const rows=data.slice(hIdx+1).filter(r=>r.some(c=>String(c||'').trim()));
+    pending={mp,headers,rows};
+    const autoMap=MP[mp].autoMap,mappings={};
+    headers.forEach((h,idx)=>{const hl=h.toLowerCase().trim();Object.entries(autoMap).forEach(([field,variants])=>{if(mappings[field]!==undefined)return;if(variants.some(v=>hl===v||hl.includes(v)||v.includes(hl)))mappings[field]=idx})});
+    document.getElementById('mapper-info').textContent=`${headers.length} sütun · ${rows.length} satır · ${MP[mp].icon} ${MP[mp].name}`;
+    document.getElementById('mapper-fields').innerHTML=MP[mp].fields.map(f=>`<div class="mrow"><div class="mlabel">${f.label}${f.req?' <span style="color:var(--bad)">*</span>':''}</div><select id="mf-${f.key}" style="flex:1"><option value="">— Seçin —</option>${headers.map((h,i)=>`<option value="${i}" ${mappings[f.key]===i?'selected':''}>${h||'(Boş '+i+')'}</option>`).join('')}</select></div>`).join('');
+    document.getElementById('modal-mapper').style.display='flex';
+  }catch(err){alert('Dosya okunamadı: '+err.message)}};
+  r.readAsArrayBuffer(file);
+}
+function confirmMapper(){
+  const{mp,headers,rows}=pending;
+  const cfg=MP[mp];const mappings={};
+  cfg.fields.forEach(f=>{const el=document.getElementById(`mf-${f.key}`);if(el&&el.value!=='')mappings[f.key]=parseInt(el.value)});
+  const missing=cfg.fields.filter(f=>f.req&&mappings[f.key]===undefined).map(f=>f.label);
+  if(missing.length){alert('Zorunlu alanları seçin:\n'+missing.join(', '));return}
+  const orders=rows.map((row,ri)=>{
+    const o={_id:Date.now()+ri};
+    cfg.fields.forEach(f=>{
+      if(mappings[f.key]===undefined){o[f.key]='';return}
+      let val=row[mappings[f.key]];
+      if(['salePrice','commission','shippingCost','desi'].includes(f.key)){
+        if(typeof val==='number'){o[f.key]=val;return}
+        let s=String(val||'0').trim();
+        let sign=s.includes('-')?-1:1;
+        s=s.replace(/[^\d.,]/g,'');
+        if(!s)o[f.key]=0;
+        else{
+          let lastC=s.lastIndexOf(','),lastD=s.lastIndexOf('.');
+          let decI=Math.max(lastC,lastD);
+          if(decI===-1)o[f.key]=parseFloat(s)*sign;
+          else{
+            let intP=s.substring(0,decI).replace(/[.,]/g,'');
+            let decP=s.substring(decI+1).replace(/[.,]/g,'');
+            o[f.key]=parseFloat(intP+'.'+decP)*sign;
+          }
+        }
+      }
+      else if(f.key==='quantity'){o[f.key]=parseInt(val||1)||1}
+      else if(f.key==='date'){
+        if(val!==''&&val!==null&&val!==undefined){
+          if(typeof val==='number'){try{const dt=XLSX.SSF.parse_date_code(val);if(dt)val=`${dt.y}-${String(dt.m).padStart(2,'0')}-${String(dt.d).padStart(2,'0')}`}catch(e){val=String(val)}}
+          else{const s=String(val).split(' ')[0].trim();const m=s.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})$/);if(m)val=`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;else val=s}
+        }else val='';
+        o[f.key]=val;
+      }else{o[f.key]=String(val||'').trim()}
+    });
+    return o;
+  }).filter(o=>o.productName||o.salePrice);
+  if(!orders.length){alert('Aktarılabilecek satır bulunamadı.');return}
+  const curr = S[mp].orders || [];
+  if (curr.length > 0) {
+    const act = prompt(`DİKKAT: Şu anda ${MP[mp].name} için yüklü ${curr.length} siparişiniz bulunuyor.\n\nEskileri SİLİP sadece bu dosyayı yüklemek için "1" yazın.\nEskilerin ÜSTÜNE EKLEMEK (ayları birleştirmek) için "2" yazın.\n\nİşlemi iptal etmek için "İptal"e basın.`, "2");
+    if (act === "1") {
+      S[mp].orders = orders;
+    } else if (act === "2") {
+      S[mp].orders = [...curr, ...orders];
+    } else {
+      return;
+    }
+  } else {
+    S[mp].orders = orders;
+  }
+  saveState();closeModal('modal-mapper');
+  populateMonthFilter();
+  renderMP(mp);updateBadges();renderDashboard();
+  showToast(`✅ ${fmtN(orders.length)} sipariş ${MP[mp].name}'a aktarıldı`);
+}
+
+// ═══════════════════════════════════════════
+// ANALİZ
+// ═══════════════════════════════════════════
+function renderAnaliz(){
+  const g=calcGlobal(),ao=getFilteredOrders();
+  const prodMap={};
+  const dailyMap={};
+  
+  ao.forEach(o=>{
+    const k=o.productName||'Bilinmiyor';
+    const compKey = k + '|' + o._mp;
+    if(!prodMap[compKey]) prodMap[compKey]={name:k, rev:0,qty:0,profit:0,lastPrice:0,_mp:o._mp};
+    const d=calcOrderDetails(o,o._mp);
+    prodMap[compKey].rev+=d.totalRev;
+    prodMap[compKey].qty+=(parseInt(o.quantity||1)||1);
+    prodMap[compKey].profit+=d.netProfit;
+    prodMap[compKey].lastPrice=d.salePrice;
+    
+    if(o.date) {
+      let dStr = String(o.date).split(' ')[0].trim();
+      const parts = dStr.split(/[.\/-]/);
+      let norm = dStr;
+      if(parts.length===3) {
+        if(parts[0].length===4) norm = `${parts[0]}-${parts[1].padStart(2,'0')}-${parts[2].padStart(2,'0')}`;
+        else norm = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+      }
+      if(!dailyMap[norm]) dailyMap[norm] = { rev:0, profit:0 };
+      dailyMap[norm].rev += d.totalRev;
+      dailyMap[norm].profit += d.netProfit;
+    }
+  });
+  
+  const sortedDates = Object.keys(dailyMap).sort();
+  const trendLabels = sortedDates.map(d => {
+    const p = d.split('-');
+    if(p.length===3) return `${p[2]}.${p[1]}`;
+    return d.slice(0,5);
+  });
+  const trendRev = sortedDates.map(d => dailyMap[d].rev);
+  const trendProfit = sortedDates.map(d => dailyMap[d].profit);
+  
+  const top=Object.entries(prodMap).sort((a,b)=>b[1].rev-a[1].rev).slice(0,10);
+  
+  const lossProducts = Object.entries(prodMap).filter(([,d])=> d.profit < 0 && d.qty > 0).sort((a,b)=>a[1].profit - b[1].profit);
+  let aiHtml = '';
+  if(lossProducts.length > 0) {
+    aiHtml = `<div class="card" style="margin-bottom:20px; background:linear-gradient(135deg, rgba(239,68,68,0.07) 0%, rgba(220,38,38,0.02) 100%); border:1px solid rgba(239,68,68,0.18); border-left:4px solid var(--bad); padding:18px; box-shadow: var(--shadow);">
+      <div style="font-size:16px;font-weight:700;color:#fca5a5;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none" onclick="const b=this.nextElementSibling; const isOpen=b.style.maxHeight && b.style.maxHeight !== '0px'; b.style.maxHeight = isOpen ? '0px' : b.scrollHeight + 'px'; b.style.opacity = isOpen ? '0' : '1'; this.querySelector('.ai-chevron').style.transform=isOpen?'rotate(-90deg)':'rotate(0deg)'">
+        <span class="ai-pulse-bad" style="flex-shrink:0"></span>
+        ${AI_SPARK_SVG('#fca5a5', 'rgba(239,68,68,0.5)')} Yapay Zeka Fiyat & Kâr Optimizasyonu (Kritik İkazlar)
+        <span style="font-size:11px; background:var(--bad); color:#fff; padding:2px 8px; border-radius:12px; margin-left:8px; font-weight:600">${lossProducts.length} İkaz</span>
+        <span class="ai-chevron" style="margin-left:auto; transition:transform 0.3s; transform:rotate(-90deg); color:var(--text2)">▼</span>
+      </div>
+      <div style="max-height:0px; opacity:0; overflow:hidden; transition: max-height 0.3s ease, opacity 0.3s ease; display:flex; flex-direction:column; gap:12px; margin-top:16px">
+        <div style="font-size:13px;color:var(--text2);margin-bottom:4px;line-height:1.5">Seçili dönemde zarar ettiğiniz veya maliyetini kurtarmayan ürünler tespit edildi. Zararı durdurmak için aşağıdaki fiyat güncellemelerini yapmanız önerilir:</div>
+        ${lossProducts.map(([key,d]) => {
+          const avgLoss = Math.abs(d.profit / d.qty);
+          const p0 = d.lastPrice;
+          const keepRate = 0.70; // %30 tahmini kesinti payı (komisyon+vergi vb)
+          const priceBreakEven = p0 + avgLoss / keepRate;
+          const price10Pct = (avgLoss + keepRate * p0) / (keepRate - 0.10);
+          const badge = `<span class="badge b-${d._mp==='trendyol'?'ty':d._mp==='hepsiburada'?'hp':'tm'}" style="margin-right:6px; font-size:11px; vertical-align:middle">${MP[d._mp]?.icon} ${MP[d._mp]?.name}</span>`;
+          
+          return `<div style="background:rgba(10,10,12,0.6);padding:14px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);box-shadow:inset 0 1px 0 rgba(255,255,255,0.03)">
+            <div style="font-weight:600;margin-bottom:6px;font-size:14px;display:flex;align-items:center">${badge} ${esc(d.name)}</div>
+            <div style="font-size:12.5px;color:var(--text2);line-height:1.6">
+              Bu ürün/set toplam <strong style="color:var(--bad)">${fmt(d.profit)}</strong> zarar ettirdi (Adet başı ort. ₺${avgLoss.toFixed(2)} zarar).<br>
+              💡 <strong>Sistem İkazı:</strong> Şu anki ~${fmt(p0)} olan satış fiyatınızı;<br>
+              <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px">
+                <div style="padding:6px 10px; background:rgba(239,68,68,0.06); border-radius:6px; border:1px solid rgba(239,68,68,0.15)">
+                  ➖ Zararı sıfırlamak için en az <strong style="color:#fca5a5;font-size:14px">${fmt(priceBreakEven)}</strong> seviyesine
+                </div>
+                <div style="padding:6px 10px; background:rgba(34,197,94,0.06); border-radius:6px; border:1px solid rgba(34,197,94,0.15); color:#a7f3d0">
+                  📈 <strong>%10 Net Kâr</strong> elde etmek için en az <strong style="color:#4ade80;font-size:14px">${fmt(price10Pct)}</strong> seviyesine
+                </div>
+              </div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  } else if (ao.length > 0) {
+    aiHtml = `<div class="card" style="margin-bottom:20px; background:linear-gradient(135deg, rgba(34,197,94,0.07) 0%, rgba(16,185,129,0.02) 100%); border:1px solid rgba(34,197,94,0.18); border-left:4px solid var(--ok); padding:18px; box-shadow: var(--shadow);">
+      <div style="font-size:16px;font-weight:700;color:var(--ok);display:flex;align-items:center;gap:10px">
+        <span class="ai-pulse-ok" style="flex-shrink:0"></span>
+        ${AI_SPARK_SVG('var(--ok)', 'rgba(34,197,94,0.5)')} Yapay Zeka Fiyat Optimizasyonu
+      </div>
+      <div style="font-size:13px;color:var(--text2);margin-top:8px;line-height:1.5">Harika haber! Seçili tarih aralığında zarar ettiren veya acil fiyat müdahalesi gerektiren bir ürününüz bulunmuyor.</div>
+    </div>`;
+  }
+
+  // 2. Fırsat Ürünleri & Reklam Tavsiyeleri (İyi Giden Satışlar)
+  const goodProducts = Object.entries(prodMap)
+    .filter(([,d]) => d.profit > 0 && d.qty >= 3 && (d.profit / d.rev) >= 0.12)
+    .sort((a,b) => b[1].qty - a[1].qty);
+
+  if(goodProducts.length > 0) {
+    aiHtml += `<div class="card" style="margin-bottom:24px; background:linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(139,92,246,0.02) 100%); border:1px solid rgba(99,102,241,0.18); border-left:4px solid var(--accent); padding:18px; box-shadow: var(--shadow);">
+      <div style="font-size:16px;font-weight:700;color:#c7d2fe;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none" onclick="const b=this.nextElementSibling; const isOpen=b.style.maxHeight && b.style.maxHeight !== '0px'; b.style.maxHeight = isOpen ? '0px' : b.scrollHeight + 'px'; b.style.opacity = isOpen ? '0' : '1'; this.querySelector('.ai-chevron').style.transform=isOpen?'rotate(-90deg)':'rotate(0deg)'">
+        <span class="ai-pulse-ok" style="flex-shrink:0; background:#818cf8; box-shadow:0 0 12px rgba(129,140,248,0.6)"></span>
+        ${AI_SPARK_SVG('#c7d2fe', 'rgba(99,102,241,0.5)')} Yapay Zeka Satış & Reklam Fırsatları
+        <span style="font-size:11px; background:var(--accent); color:#fff; padding:2px 8px; border-radius:12px; margin-left:8px; font-weight:600">${goodProducts.length} Fırsat</span>
+        <span class="ai-chevron" style="margin-left:auto; transition:transform 0.3s; transform:rotate(-90deg); color:var(--text2)">▼</span>
+      </div>
+      <div style="max-height:0px; opacity:0; overflow:hidden; transition: max-height 0.3s ease, opacity 0.3s ease; display:flex; flex-direction:column; gap:12px; margin-top:16px">
+        <div style="font-size:13px;color:var(--text2);margin-bottom:4px;line-height:1.5">Seçili dönemde yüksek satış performansına ve sağlıklı net kâr oranına sahip, reklam veya kampanya yatırımlarıyla kârlılığınızı daha da artırabileceğiniz fırsat ürünleriniz tespit edildi:</div>
+        ${goodProducts.map(([key,d]) => {
+          const margin = (d.profit / d.rev) * 100;
+          const badge = `<span class="badge b-${d._mp==='trendyol'?'ty':d._mp==='hepsiburada'?'hp':'tm'}" style="margin-right:6px; font-size:11px; vertical-align:middle">${MP[d._mp]?.icon} ${MP[d._mp]?.name}</span>`;
+          
+          return `<div style="background:rgba(10,10,12,0.6);padding:14px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);box-shadow:inset 0 1px 0 rgba(255,255,255,0.03)">
+            <div style="font-weight:600;margin-bottom:6px;font-size:14px;display:flex;align-items:center">${badge} ${esc(d.name)}</div>
+            <div style="font-size:12.5px;color:var(--text2);line-height:1.6">
+              Bu ürün/set seçili dönemde <strong style="color:#818cf8">${d.qty} adet</strong> satarak toplam <strong style="color:var(--ok)">${fmt(d.profit)}</strong> net kâr sağladı. Net Kâr Oranı ise yüksek seviyede: <strong style="color:var(--ok)">%${margin.toFixed(1)}</strong>.<br>
+              ✨ <strong>Yapay Zeka Stratejik Önerileri:</strong>
+              <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px">
+                <div style="padding:6px 10px; background:rgba(99,102,241,0.06); border-radius:6px; border:1px solid rgba(99,102,241,0.15)">
+                  🚀 <strong>Reklam Fırsatı:</strong> Kâr marjınız reklam bütçesini sübvanse etmek için fazlasıyla yeterli. Bu ürün için <strong>sponsorlu ürün reklamı</strong> başlatarak satış hacmini katlayabilirsiniz. Önerilen başlangıç TBM: ₺1.50 - ₺2.50.
+                </div>
+                <div style="padding:6px 10px; background:rgba(16,185,129,0.06); border-radius:6px; border:1px solid rgba(16,185,129,0.15); color:#a7f3d0">
+                  🎁 <strong>Sepet Büyütme Kampanyası:</strong> Organik talebi avantaja çevirmek adına bu ürüne özel <strong>"İkincisi %50 İndirimli"</strong> veya <strong>"3 Al 2 Öde"</strong> kampanyası kurgulayarak sipariş başı cironuzu artırabilirsiniz.
+                </div>
+              </div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('analiz-c').innerHTML=`
+    ${aiHtml}
+    <div class="sgrid">
+      <div class="sc ac"><div class="sl">Brüt Ciro</div><div class="sv">${fmt(g.rev)}</div></div>
+      <div class="sc wa"><div class="sl">Komisyon</div><div class="sv">${fmt(g.comm)}</div><div class="ss">%${pct(g.comm,g.rev)}</div></div>
+      <div class="sc ba"><div class="sl">Kargo</div><div class="sv">${fmt(g.kargo)}</div></div>
+      <div class="sc ba"><div class="sl">Stopaj + Hizmet</div><div class="sv">${fmt(g.stopaj+g.sh+g.tah)}</div></div>
+      <div class="sc ba"><div class="sl">Ürün Maliyeti</div><div class="sv">${fmt(g.pc)}</div></div>
+      <div class="sc ba"><div class="sl">Sabit Giderler</div><div class="sv">${fmt(g.expTotal)}</div></div>
+      <div class="sc ok"><div class="sl">Net Kâr</div><div class="sv ${clr(g.netProfit)}">${fmt(g.netProfit)}</div><div class="ss">Net Kâr Oranı: <strong class="${clr(g.netProfit)}">%${pct(g.netProfit,g.rev)}</strong></div></div>
+    </div>
+    <div class="cgrid">
+      <div class="cc"><div class="ct">En Çok Satan Ürünler (Ciro/Kâr)</div><div class="ch" style="height:260px"><canvas id="ch-top"></canvas></div></div>
+      <div class="cc"><div class="ct">Satış Trendi (Günlük)</div><div class="ch" style="height:260px"><canvas id="ch-trend"></canvas></div></div>
+    </div>
+    <div class="tw"><div class="th"><div class="tt">Ürün Bazında Performans</div></div><div class="ts">
+      ${top.length?`<table><thead><tr><th>#</th><th>Ürün</th><th style="text-align:right">Adet</th><th style="text-align:right">Ciro</th><th style="text-align:right">Net Kâr</th><th style="min-width:150px">Kâr Oranı</th></tr></thead><tbody>
+      ${top.map(([key,d],i)=>{
+        const badge = `<span class="badge b-${d._mp==='trendyol'?'ty':d._mp==='hepsiburada'?'hp':'tm'}" style="margin-right:6px; font-size:10px">${MP[d._mp]?.icon} ${MP[d._mp]?.name}</span>`;
+        return `<tr><td style="color:var(--text2)">${i+1}</td><td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(d.name)}">${badge}${esc(d.name)}</td><td style="text-align:right">${fmtN(d.qty)}</td><td style="text-align:right">${fmt(d.rev)}</td><td style="text-align:right" class="${clr(d.profit)}">${fmt(d.profit)}</td><td><div class="pw"><div class="pbar"><div class="pfill" style="width:${Math.max(0,Math.min(100,d.rev>0?(d.profit/d.rev)*100:0))}%;background:${d.profit>=0?'var(--ok)':'var(--bad)'}"></div></div><span style="font-size:11px;min-width:40px;text-align:right" class="${clr(d.profit)}">%${pct(d.profit,d.rev)}</span></div></td></tr>`;
+      }).join('')}
+      </tbody></table>`: `<div class="empty"><p>Analiz için sipariş verisi yükleyin.</p></div>`}
+    </div></div>
+  `;
+  setTimeout(()=>{
+    if (typeof Chart === 'undefined') return;
+    killChart('top');
+    const ctx=document.getElementById('ch-top');
+    if(ctx&&top.length) {
+      const ctx2dTop = ctx.getContext('2d');
+      const gradTopCiro = ctx2dTop.createLinearGradient(0, 0, 400, 0);
+      gradTopCiro.addColorStop(0, 'rgba(129, 140, 248, 0.85)');
+      gradTopCiro.addColorStop(1, 'rgba(129, 140, 248, 0.2)');
+      
+      const gradTopProfit = ctx2dTop.createLinearGradient(0, 0, 400, 0);
+      gradTopProfit.addColorStop(0, 'rgba(34, 197, 94, 0.85)');
+      gradTopProfit.addColorStop(1, 'rgba(34, 197, 94, 0.2)');
+
+      CHS['top']=new Chart(ctx,{type:'bar',data:{labels:top.map(([,d])=>d.name.length>26?d.name.slice(0,26)+'…':d.name),datasets:[{label:'Ciro',data:top.map(([,d])=>d.rev),backgroundColor:gradTopCiro,borderRadius:4},{label:'Kâr',data:top.map(([,d])=>Math.max(0,d.profit)),backgroundColor:gradTopProfit,borderRadius:4}]},options:{...CDef,indexAxis:'y',scales:{x:{ticks:{...CTick('#7b80a0'),callback:v=>'₺'+v},grid:CGrid},y:{ticks:{...CTick('#7b80a0'),font:{family:'Outfit',size:11}},grid:CGrid}}}});
+    }
+    
+    killChart('trend');
+    const ctxTrend=document.getElementById('ch-trend');
+    if(ctxTrend && trendLabels.length) {
+      const pr = trendLabels.length < 3 ? 5 : 2;
+      const ctx2dTrend = ctxTrend.getContext('2d');
+      const gradTrendProfit = ctx2dTrend.createLinearGradient(0, 0, 0, 260);
+      gradTrendProfit.addColorStop(0, 'rgba(34, 197, 94, 0.25)');
+      gradTrendProfit.addColorStop(1, 'rgba(34, 197, 94, 0.0)');
+      
+      const gradTrendRev = ctx2dTrend.createLinearGradient(0, 0, 0, 260);
+      gradTrendRev.addColorStop(0, 'rgba(129, 140, 248, 0.15)');
+      gradTrendRev.addColorStop(1, 'rgba(129, 140, 248, 0.0)');
+
+      CHS['trend']=new Chart(ctxTrend,{
+        type:'line',
+        data:{
+          labels:trendLabels,
+          datasets:[
+            {label:'Net Kâr',data:trendProfit,borderColor:'rgba(34,197,94,1)',backgroundColor:gradTrendProfit,fill:true,tension:0.4,pointRadius:pr,pointHoverRadius:pr+2},
+            {label:'Ciro',data:trendRev,borderColor:'rgba(129,140,248,1)',backgroundColor:gradTrendRev,fill:true,tension:0.4,borderDash:[5,5],pointRadius:pr,pointHoverRadius:pr+2}
+          ]
+        },
+        options:{...CDef,scales:{x:{ticks:CTick('#7b80a0'),grid:CGrid},y:{ticks:{...CTick('#7b80a0'),callback:v=>'₺'+v},grid:CGrid}}}
+      });
+    }
+  },80);
+}
+
+// ═══════════════════════════════════════════
+// GİDERLER
+// ═══════════════════════════════════════════
+function renderGiderler(){
+  const exps=S.expenses||[];const total=exps.reduce((s,e)=>s+TRY(e.amount),0);
+  const byCat={};exps.forEach(e=>{byCat[e.category]=(byCat[e.category]||0)+TRY(e.amount)});
+  document.getElementById('gider-c').innerHTML=`
+    <div class="sgrid"><div class="sc ba"><div class="sl">Toplam Gider</div><div class="sv">${fmt(total)}</div><div class="ss">${exps.length} kalem</div></div>${Object.entries(byCat).map(([c,a])=>`<div class="sc"><div class="sl">${c}</div><div class="sv">${fmt(a)}</div><div class="ss">%${pct(a,total)}</div></div>`).join('')}</div>
+    <div class="sh"><div class="stit">Gider Listesi</div><button class="btn bp" onclick="openExpenseModal()">+ Gider Ekle</button></div>
+    <div class="tw"><div class="ts">${exps.length?`<table><thead><tr><th>#</th><th>Ad</th><th>Kategori</th><th>Pazaryeri</th><th style="text-align:right">Tutar</th><th>Tarih</th><th>Not</th><th></th></tr></thead><tbody>${exps.map((e,i)=>`<tr><td style="color:var(--text2)">${i+1}</td><td style="font-weight:500">${esc(e.name)}</td><td><span class="badge b-wa">${e.category}</span></td><td>${e.marketplace?`<span class="badge b-${e.marketplace==='trendyol'?'ty':e.marketplace==='hepsiburada'?'hp':'tm'}">${MP[e.marketplace]?.icon} ${MP[e.marketplace]?.name}</span>`:'<span class="badge b-ac">Genel</span>'}</td><td style="text-align:right;color:var(--bad);font-weight:600">${fmt(e.amount)}</td><td style="font-size:11px;color:var(--text2)">${e.date||'-'}</td><td style="font-size:11px;color:var(--text2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e.note||'-')}</td><td><button class="btn bd sm" onclick="deleteExpense(${i})">Sil</button></td></tr>`).join('')}</tbody><tfoot><tr><td colspan="4" style="padding:8px 12px">TOPLAM</td><td style="text-align:right;color:var(--bad)">${fmt(total)}</td><td colspan="3"></td></tr></tfoot></table>`:`<div class="empty"><div class="ei">💰</div><h3>Gider yok</h3><p>"+ Gider Ekle" ile kargo anlaşmaları, paketleme vb. giderleri ekleyin.</p></div>`}</div></div>
+  `;
+}
+function openExpenseModal(){document.getElementById('ex-n').value='';document.getElementById('ex-a').value='';document.getElementById('ex-d').value=todayStr();document.getElementById('ex-nt').value='';document.getElementById('modal-exp').style.display='flex'}
+function saveExpense(){const n=document.getElementById('ex-n').value.trim(),a=parseFloat(document.getElementById('ex-a').value);if(!n||isNaN(a)||a<=0){alert('Ad ve geçerli tutar girin');return}S.expenses.push({name:n,amount:a,category:document.getElementById('ex-c').value,date:document.getElementById('ex-d').value,marketplace:document.getElementById('ex-m').value,note:document.getElementById('ex-nt').value.trim()});saveState();closeModal('modal-exp');renderGiderler();updateBadges()}
+function deleteExpense(i){if(!confirm('Bu gideri silmek istediğinizden emin misiniz?'))return;S.expenses.splice(i,1);saveState();renderGiderler();updateBadges()}
+
+// ═══════════════════════════════════════════
+// ÜRÜN MALİYETLERİ
+// ═══════════════════════════════════════════
+function renderMaliyetler(){
+  const p=S.products||[];
+  document.getElementById('mal-c').innerHTML=`
+    <div class="card" style="margin-bottom:24px; background:linear-gradient(135deg, rgba(108,99,255,0.08) 0%, rgba(34,197,94,0.08) 100%); border:1px solid rgba(129,140,248,0.3); padding:20px; border-radius:14px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+      <div style="font-size:16px; font-weight:700; margin-bottom:16px; display:flex; align-items:center; gap:8px"><span style="font-size:20px">🧪</span> Fiyat & Kâr Simülatörü</div>
+      <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
+        <div style="flex:1; min-width:130px"><label style="font-size:11px;color:var(--text2);margin-bottom:6px;display:block">Pazaryeri</label><select id="sim-mp" class="inp" onchange="runSim()"><option value="trendyol">Trendyol</option><option value="hepsiburada">Hepsiburada</option><option value="temu">Temu</option></select></div>
+        <div style="flex:1; min-width:130px"><label style="font-size:11px;color:var(--text2);margin-bottom:6px;display:block">Satış Fiyatı (₺)</label><input type="number" id="sim-price" class="inp" value="200" oninput="runSim()"></div>
+        <div style="flex:1; min-width:130px"><label style="font-size:11px;color:var(--text2);margin-bottom:6px;display:block">Ürün Maliyeti (₺)</label><input type="number" id="sim-cost" class="inp" value="100" oninput="runSim()"></div>
+        <div style="flex:1; min-width:80px"><label style="font-size:11px;color:var(--text2);margin-bottom:6px;display:block">Desi</label><input type="number" id="sim-desi" class="inp" value="2" oninput="runSim()"></div>
+        <div style="flex:1; min-width:90px"><label style="font-size:11px;color:var(--text2);margin-bottom:6px;display:block">Komisyon (%)</label><input type="number" id="sim-comm" class="inp" value="15" oninput="runSim()"></div>
+        <div style="flex:1.5; min-width:200px; padding:12px 16px; background:rgba(0,0,0,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; border:1px solid rgba(255,255,255,0.05)">
+           <div style="font-size:11px; color:var(--text2); margin-bottom:4px">Tahmini Net Kâr (Kargo & Vergi Düşülmüş)</div>
+           <div id="sim-result" style="font-size:22px; font-weight:800; color:var(--ok)">₺0,00 <span style="font-size:13px;font-weight:600;opacity:0.8">(%0.0)</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="ib ac">Ürün adı/SKU kısmi eşleşmeyle sipariş tablolarına uygulanır. Desi girilirse o ürüne özel kargo hesaplanır.</div>
+    <div class="sh">
+      <div class="stit">Ürün Maliyetleri (${p.length})</div>
+      <div style="display:flex;gap:10px">
+        <input type="text" id="mal-search" placeholder="🔍 Ürün Ara..." class="inp" style="width:250px" oninput="filterMaliyetlerTable(this.value)" />
+        <button class="btn bs" onclick="window.resetProductsToDefault()">🔄 Varsayılanları Yükle</button>
+        <button class="btn bp" onclick="openProductModal()">+ Ekle</button>
+      </div>
+    </div>
+    <div class="tw"><div class="ts">${p.length?`<table id="mal-table"><thead><tr><th>#</th><th>Ürün / SKU</th><th>Paket İçi</th><th style="text-align:right">Birim Maliyet</th><th style="text-align:right">Desi</th><th style="text-align:right">KDV</th><th></th></tr></thead><tbody>${p.map((pr,i)=>`<tr class="mal-row"><td style="color:var(--text2)">${i+1}</td><td style="font-weight:500" class="mal-name">${esc(pr.name)}</td><td>${pr.packSize?`<span class="badge b-ac">${pr.packSize}'li</span>`:'<span style="color:var(--text2)">Otomatik</span>'}</td><td style="text-align:right;color:var(--warn);font-weight:600">${fmt(pr.cost)}</td><td style="text-align:right">${pr.desi||'—'}</td><td style="text-align:right">%${pr.kdvRate!==undefined?pr.kdvRate:20}</td><td style="display:flex;gap:6px"><button class="btn bs sm" onclick="openProductModal(${i})">Düzenle</button><button class="btn bd sm" onclick="deleteProduct(${i})">Sil</button></td></tr>`).join('')}</tbody></table>`:`<div class="empty"><div class="ei">📦</div><h3>Ürün maliyeti yok</h3><p>Kar hesaplaması için ürün birim maliyetlerini ekleyin.</p></div>`}</div></div>
+  `;
+  setTimeout(()=>window.runSim&&window.runSim(), 50);
+}
+
+function filterMaliyetlerTable(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll('.mal-row').forEach(row => {
+    const name = row.querySelector('.mal-name').textContent.toLowerCase();
+    row.style.display = name.includes(q) ? '' : 'none';
+  });
+}
+function openProductModal(idx){
+  const p = idx!==undefined ? S.products[idx] : {};
+  document.getElementById('pr-n').value = p.name || '';
+  document.getElementById('pr-c').value = p.cost || '';
+  document.getElementById('pr-d').value = p.desi || '';
+  document.getElementById('pr-ps').value = p.packSize || '';
+  document.getElementById('pr-k').value = p.kdvRate !== undefined ? p.kdvRate : 20;
+  document.getElementById('pr-idx').value = idx !== undefined ? idx : '';
+  
+  // Sipariş listesinden checkboxları oluştur
+  let aliases = [];
+  if (Array.isArray(p.aliases)) aliases = p.aliases;
+  else if (typeof p.aliases === 'string') aliases = p.aliases.split(',').map(x=>x.trim()).filter(x=>x);
+  
+  const uniqueNames = [...new Set(allOrders().map(o=>o.productName).filter(x=>x))].sort();
+  aliases.forEach(a => { if(!uniqueNames.includes(a)) uniqueNames.push(a); });
+  
+  const listHTML = uniqueNames.map(name => {
+    const checked = aliases.includes(name) ? 'checked' : '';
+    return `<label class="alias-lbl" style="display:flex;align-items:flex-start;gap:6px;font-size:11px;cursor:pointer;padding:6px;border-radius:4px;background:var(--bg);border:1px solid transparent">
+      <input type="checkbox" value="${esc(name)}" ${checked} style="margin-top:2px" />
+      <span style="word-break:break-word">${esc(name)}</span>
+    </label>`;
+  }).join('');
+  
+  document.getElementById('pr-alias-list').innerHTML = listHTML || '<div style="font-size:11px;color:var(--text2);padding:4px">Önce Excel yükleyin...</div>';
+  document.getElementById('pr-alias-search').value = '';
+  
+  document.getElementById('modal-prod').style.display='flex';
+}
+function filterAliasList(q){
+  q = q.toLowerCase();
+  document.querySelectorAll('.alias-lbl').forEach(lbl => {
+    const text = lbl.textContent.toLowerCase();
+    lbl.style.display = text.includes(q) ? 'flex' : 'none';
+  });
+}
+function saveProduct(){
+  const n=document.getElementById('pr-n').value.trim(),c=parseFloat(document.getElementById('pr-c').value);
+  if(!n||isNaN(c)){alert('Ad ve maliyet girin');return}
+  const d=parseFloat(document.getElementById('pr-d').value)||undefined;
+  const ps=parseInt(document.getElementById('pr-ps').value)||undefined;
+  
+  const checkedAliases = [];
+  document.querySelectorAll('#pr-alias-list input[type="checkbox"]:checked').forEach(cb => {
+    checkedAliases.push(cb.value);
+  });
+  
+  const k=parseInt(document.getElementById('pr-k').value);
+  const obj={name:n,cost:c,...(d?{desi:d}:{}),...(ps?{packSize:ps}:{}),aliases:checkedAliases,kdvRate:k};
+  const idx=document.getElementById('pr-idx').value;
+  if(idx!=='')S.products[parseInt(idx)]=obj;else S.products.push(obj);
+  saveState();closeModal('modal-prod');renderMaliyetler();
+}
+function deleteProduct(i){if(!confirm('Bu kaydı silmek istiyor musunuz?'))return;S.products.splice(i,1);saveState();renderMaliyetler()}
+window.resetProductsToDefault = function(){
+  S.products=defaultProducts.map(p=>({...p}));
+  saveState();
+  renderMaliyetler();
+  showToast('Varsayılan ürün listesi başarıyla yüklendi!');
+}
+
+// ═══════════════════════════════════════════
+// AYARLAR
+// ═══════════════════════════════════════════
+function renderAyarlar(){
+  document.getElementById('ayar-c').innerHTML=`
+    <div class="stabs">
+      <div class="stab active" onclick="switchStab(this,'s-genel')">⚙️ Genel</div>
+      <div class="stab" onclick="switchStab(this,'s-ty')">🟠 Trendyol</div>
+      <div class="stab" onclick="switchStab(this,'s-hp')">🟡 Hepsiburada</div>
+      <div class="stab" onclick="switchStab(this,'s-temu')">🟣 Temu</div>
+      <div class="stab" onclick="switchStab(this,'s-tariff')">🚚 Kargo Tarifeleri</div>
+    </div>
+    <div class="stabp active" id="s-genel">${renderSGenel()}</div>
+    <div class="stabp" id="s-ty">${renderSMP('trendyol')}</div>
+    <div class="stabp" id="s-hp">${renderSMP('hepsiburada')}</div>
+    <div class="stabp" id="s-temu">${renderSTemu()}</div>
+    <div class="stabp" id="s-tariff">${renderSTariff()}</div>
+  `;
+}
+function switchStab(el,id){
+  document.querySelectorAll('.stab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.stabp').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');document.getElementById(id).classList.add('active');
+}
+function renderSGenel(){
+  const cfg=S.settings;
+  return`<div style="max-width:560px">
+    <div class="ubox"><div class="stit" style="margin-bottom:12px">Genel Ayarlar</div>
+      <div class="fg"><label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+        <input type="checkbox" id="sg-kdv" ${cfg.kdvEnabled?'checked':''} style="width:auto" onchange="S.settings.kdvEnabled=this.checked;saveState()"/>
+        KDV hesabını dahil et (gelişmiş)
+      </label></div>
+      <div class="ib wa">KDV hesabı; satıştan gelen KDV, ürün maliyeti üzerindeki indirebilir KDV ve kargo KDV'sini birlikte hesaplar. Vergi kaydı olan satıcılar için uygundur. Ürün maliyetiniz KDV hariç ise aktif edin.</div>
+    </div>
+    <div class="ubox">
+      <div class="stit" style="margin-bottom:12px">Veri Yönetimi</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn bs" onclick="exportBackup()">⬇ Yedek Al</button>
+        <button class="btn bs" onclick="document.getElementById('fi-bak').click()">⬆ Yedek Yükle</button>
+        <button class="btn bd" onclick="resetAll()">⚠️ Tümünü Sıfırla</button>
+      </div>
+      <input type="file" id="fi-bak" style="display:none" accept=".json" onchange="importBackup(event)"/>
+    </div>
+  </div>`;
+}
+function renderSMP(mp){
+  const c=S.settings[mp]||{};
+  const tyExtra=mp==='trendyol'?`
+    <div class="fg"><label>Varsayılan Kargo Firması</label>
+      <select id="s-${mp}-cargoFirm"><option value="TEX" ${c.defaultCargoFirm==='TEX'?'selected':''}>Trendyol Express (TEX)</option><option value="PTT" ${c.defaultCargoFirm==='PTT'?'selected':''}>PTT Kargo</option></select>
+    </div>
+    <div class="fg"><label>Barem Tipi</label>
+      <select id="s-${mp}-barem"><option value="standart" ${c.baremType==='standart'?'selected':''}>Standart (Termin >1 gün veya etiketsiz)</option><option value="avantajli" ${c.baremType==='avantajli'?'selected':''}>Avantajlı (Termin 1 gün + Hızlı Teslimat)</option></select>
+    </div>
+    <div class="fgrid">
+      <div class="fg"><label>Barem Eşiği (₺)</label><input id="s-${mp}-bs" type="number" value="${c.baremSinir||350}" step="1"/></div>
+      <div class="fg"><label>Max Desi (barem için)</label><input id="s-${mp}-bd" type="number" value="${c.baremDesiSinir||10}" step="0.5"/></div>
+    </div>
+    <div class="ib ac" style="margin-bottom:10px">Avantajlı Barem fiyatları (0-199 TL | 200-349 TL):</div>
+    <div class="fgrid">
+      <div class="fg"><label>Avantajlı Alt (₺)</label><input id="s-${mp}-baa" type="number" value="${c.baremAvAlt||40.99}" step="0.01"/></div>
+      <div class="fg"><label>Avantajlı Üst (₺)</label><input id="s-${mp}-bau" type="number" value="${c.baremAvUst||79.00}" step="0.01"/></div>
+      <div class="fg"><label>Standart Alt (₺)</label><input id="s-${mp}-bsa" type="number" value="${c.baremStAlt||77.50}" step="0.01"/></div>
+      <div class="fg"><label>Standart Üst (₺)</label><input id="s-${mp}-bsu" type="number" value="${c.baremStUst||87.49}" step="0.01"/></div>
+    </div>`:'';
+  const hbExtra=mp==='hepsiburada'?`
+    <div class="fgrid">
+      <div class="fg"><label>Komisyon KDV (%)</label><input id="s-${mp}-ckvdv" type="number" value="${c.commKdvRate||20}" step="0.1"/></div>
+      <div class="fg"><label>Tahsilat Bedeli (%)</label><input id="s-${mp}-tah" type="number" value="${c.tahsilatRate||1}" step="0.01"/></div>
+    </div>
+    <div class="fg"><label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+      <input type="checkbox" id="s-${mp}-fast" ${c.deliveryFast?'checked':''} style="width:auto"/>
+      hepsiJET Barem aktif (kargoya veriliş 0-1 gün, &lt;${c.baremSinir||400} TL)
+    </label></div>
+    <div class="fgrid">
+      <div class="fg"><label>Barem Alt (₺, 0-199)</label><input id="s-${mp}-ba" type="number" value="${c.baremAlt||50.40}" step="0.01"/></div>
+      <div class="fg"><label>Barem Üst (₺, 200-399)</label><input id="s-${mp}-bu" type="number" value="${c.baremUst||86.40}" step="0.01"/></div>
+      <div class="fg"><label>Barem Eşiği (₺)</label><input id="s-${mp}-bs" type="number" value="${c.baremSinir||400}" step="1"/></div>
+    </div>`:'';
+  return`<div style="max-width:640px">
+    <div class="ubox">
+      <div class="stit" style="margin-bottom:14px">${MP[mp].icon} ${MP[mp].name} Ayarları</div>
+      <div class="fg"><label>Hesaplama Modu</label>
+        <select id="s-${mp}-mode"><option value="otomatik" ${c.calcMode==='otomatik'?'selected':''}>Otomatik (barem/desi formülü)</option><option value="excel" ${c.calcMode==='excel'?'selected':''}>Excel Modu (dosyadaki komisyon ve kargo kullanılır)</option></select>
+      </div>
+      <div class="fgrid">
+        <div class="fg"><label>Komisyon Oranı (%)</label><input id="s-${mp}-comm" type="number" value="${c.commRate||14}" step="0.1"/></div>
+        <div class="fg"><label>Stopaj (%)</label><input id="s-${mp}-stop" type="number" value="${c.stopajRate||1}" step="0.01"/></div>
+        <div class="fg"><label>Sabit Hizmet Bedeli (₺)</label><input id="s-${mp}-sh" type="number" value="${c.sabitHizmet||0}" step="0.01"/></div>
+        <div class="fg"><label>Varsayılan Desi</label><input id="s-${mp}-desi" type="number" value="${c.defaultDesi||2}" step="0.5" min="0.5"/></div>
+        <div class="fg"><label>KDV Oranı (%)</label><input id="s-${mp}-kdv" type="number" value="${c.kdvRate||20}" step="1"/></div>
+      </div>
+      ${tyExtra}${hbExtra}
+      <button class="btn bp" onclick="saveMPSettings('${mp}')">💾 Kaydet</button>
+    </div>
+  </div>`;
+}
+function renderSTemu(){
+  const c=S.settings.temu||{};
+  return`<div style="max-width:640px"><div class="ubox">
+    <div class="stit" style="margin-bottom:14px">🟣 Temu Ayarları</div>
+    <div class="ib ok">Temu'da komisyon %0, sabit hizmet bedeli ve tahsilat bedeli yoktur.</div>
+    <div class="fg"><label>Hesaplama Modu</label>
+      <select id="s-temu-mode"><option value="otomatik" ${c.calcMode==='otomatik'?'selected':''}>Otomatik (Aras desi + müşteri katkısı)</option><option value="excel" ${c.calcMode==='excel'?'selected':''}>Excel Modu</option></select>
+    </div>
+    <div class="fgrid">
+      <div class="fg"><label>Stopaj (%)</label><input id="s-temu-stop" type="number" value="${c.stopajRate||1}" step="0.01"/></div>
+      <div class="fg"><label>Müşteri Kargo Katkısı (₺)</label><input id="s-temu-cc" type="number" value="${c.customerContrib||45}" step="1"/></div>
+      <div class="fg"><label>Barem Eşiği (₺)</label><input id="s-temu-bs" type="number" value="${c.baremSinir||350}" step="1"/></div>
+      <div class="fg"><label>Varsayılan Desi</label><input id="s-temu-desi" type="number" value="${c.defaultDesi||2}" step="0.5" min="0.5"/></div>
+      <div class="fg"><label>KDV Oranı (%)</label><input id="s-temu-kdv" type="number" value="${c.kdvRate||20}" step="1"/></div>
+    </div>
+    <button class="btn bp" onclick="saveTemuSettings()">💾 Kaydet</button>
+  </div></div>`;
+}
+function renderSTariff(){
+  return `<div style="max-width:700px">
+    <div class="ib ac">Kargo tarifelerini düzenleyin. Ara desi değerleri otomatik olarak doğrusal interpolasyonla hesaplanır. Her satırda desi ve fiyat (TL, KDV dahil) girin.</div>
+    ${[
+      {mp:'trendyol', key:'desiTariffPTT', name:'PTT Kargo', desc:'Trendyol PTT anlaşmalı tarife'},
+      {mp:'trendyol', key:'desiTariffTEX', name:'Trendyol Express (TEX)', desc:'Trendyol TEX anlaşmalı tarife'},
+      {mp:'hepsiburada', key:'desiTariff', name:'hepsiJET', desc:'hepsiJET anlaşmalı tarife'},
+      {mp:'temu', key:'desiTariff', name:'Aras Kargo', desc:'Aras Kargo (KDV+EPH dahil)'}
+    ].map(item=>`
+    <div class="ubox" style="margin-bottom:16px">
+      <div class="stit" style="margin-bottom:4px">${MP[item.mp].icon} ${MP[item.mp].name} - ${item.name} Tarifesi</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:12px">${item.desc}</div>
+      <div class="ts"><table style="min-width:auto">
+        <thead><tr><th>Desi</th><th style="text-align:right">Fiyat (₺)</th><th></th></tr></thead>
+        <tbody id="tariff-${item.mp}-${item.key}">
+          ${(S.settings[item.mp]?.[item.key]||[]).map((r,i)=>`<tr>
+            <td><input type="number" value="${r.d}" step="0.5" min="0.5" style="width:80px" oninput="updateTariff('${item.mp}','${item.key}',${i},'d',this.value)"/></td>
+            <td style="text-align:right"><input type="number" value="${r.p.toFixed(2)}" step="0.01" style="width:100px;text-align:right" oninput="updateTariff('${item.mp}','${item.key}',${i},'p',this.value)"/></td>
+            <td><button class="btn bd sm" onclick="deleteTariffRow('${item.mp}','${item.key}',${i})">×</button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+      <button class="btn bs sm" style="margin-top:10px" onclick="addTariffRow('${item.mp}','${item.key}')">+ Satır Ekle</button>
+    </div>`).join('')}
+    <button class="btn bp" onclick="saveTariffs()">💾 Tarifeleri Kaydet</button>
+  </div>`;
+}
+function updateTariff(mp,tKey,i,key,val){if(S.settings[mp]?.[tKey]?.[i])S.settings[mp][tKey][i][key]=parseFloat(val)||0}
+function deleteTariffRow(mp,tKey,i){S.settings[mp][tKey].splice(i,1);saveState();renderAyarlar();setTimeout(()=>document.querySelectorAll('.stab').forEach(t=>{if(t.textContent.includes('Kargo'))t.click()}),10)}
+function addTariffRow(mp,tKey){const t=S.settings[mp][tKey]||[];const last=t[t.length-1]||{d:1,p:100};t.push({d:last.d+1,p:last.p+10});saveState();renderAyarlar();setTimeout(()=>document.querySelectorAll('.stab').forEach(t=>{if(t.textContent.includes('Kargo'))t.click()}),10)}
+function saveTariffs(){
+  ['desiTariffPTT','desiTariffTEX'].forEach(k=>{if(S.settings.trendyol?.[k])S.settings.trendyol[k].sort((a,b)=>a.d-b.d)});
+  if(S.settings.hepsiburada?.desiTariff)S.settings.hepsiburada.desiTariff.sort((a,b)=>a.d-b.d);
+  if(S.settings.temu?.desiTariff)S.settings.temu.desiTariff.sort((a,b)=>a.d-b.d);
+  saveState();showToast('✅ Kargo tarifeleri kaydedildi');
+}
+
+function saveMPSettings(mp){
+  const c=S.settings[mp];
+  c.calcMode=document.getElementById(`s-${mp}-mode`).value;
+  c.commRate=parseFloat(document.getElementById(`s-${mp}-comm`).value)||0;
+  c.stopajRate=parseFloat(document.getElementById(`s-${mp}-stop`).value)||1;
+  c.sabitHizmet=parseFloat(document.getElementById(`s-${mp}-sh`).value)||0;
+  c.defaultDesi=parseFloat(document.getElementById(`s-${mp}-desi`).value)||2;
+  c.kdvRate=parseFloat(document.getElementById(`s-${mp}-kdv`).value)||20;
+  if(mp==='trendyol'){c.defaultCargoFirm=document.getElementById(`s-${mp}-cargoFirm`).value;c.baremType=document.getElementById(`s-${mp}-barem`).value;c.baremSinir=parseFloat(document.getElementById(`s-${mp}-bs`).value)||350;c.baremDesiSinir=parseFloat(document.getElementById(`s-${mp}-bd`).value)||10;c.baremAvAlt=parseFloat(document.getElementById(`s-${mp}-baa`).value)||40.99;c.baremAvUst=parseFloat(document.getElementById(`s-${mp}-bau`).value)||79.00;c.baremStAlt=parseFloat(document.getElementById(`s-${mp}-bsa`).value)||77.50;c.baremStUst=parseFloat(document.getElementById(`s-${mp}-bsu`).value)||87.49}
+  if(mp==='hepsiburada'){c.commKdvRate=parseFloat(document.getElementById(`s-${mp}-ckvdv`).value)||20;c.tahsilatRate=parseFloat(document.getElementById(`s-${mp}-tah`).value)||1;c.deliveryFast=document.getElementById(`s-${mp}-fast`).checked;c.baremSinir=parseFloat(document.getElementById(`s-${mp}-bs`).value)||400;c.baremAlt=parseFloat(document.getElementById(`s-${mp}-ba`).value)||50.40;c.baremUst=parseFloat(document.getElementById(`s-${mp}-bu`).value)||86.40}
+  saveState();showToast(`✅ ${MP[mp].name} ayarları kaydedildi`);
+}
+function saveTemuSettings(){
+  const c=S.settings.temu;
+  c.calcMode=document.getElementById('s-temu-mode').value;
+  c.stopajRate=parseFloat(document.getElementById('s-temu-stop').value)||1;
+  c.customerContrib=parseFloat(document.getElementById('s-temu-cc').value)||45;
+  c.baremSinir=parseFloat(document.getElementById('s-temu-bs').value)||350;
+  c.defaultDesi=parseFloat(document.getElementById('s-temu-desi').value)||2;
+  c.kdvRate=parseFloat(document.getElementById('s-temu-kdv').value)||20;
+  saveState();showToast('✅ Temu ayarları kaydedildi');
+}
+
+function exportBackup(){
+  const encrypted = localStorage.getItem('state_enc');
+  if (!encrypted) {
+    alert('Şifreli veri bulunamadı.');
+    return;
+  }
+  const b=new Blob([encrypted],{type:'text/plain'});
+  const u=URL.createObjectURL(b);
+  const a=document.createElement('a');
+  a.href=u;
+  a.download=`pazaryeri_yedek_sifreli_${todayStr()}.txt`;
+  a.click();
+  URL.revokeObjectURL(u);
+}
+function importBackup(e){
+  const f=e.target.files[0];
+  if(!f)return;
+  const r=new FileReader();
+  r.onload=async ev=>{
+    try {
+      const fileContent = ev.target.result.trim();
+      let importedState = null;
+      try {
+        const parsed = JSON.parse(fileContent);
+        if (parsed && typeof parsed === 'object') {
+          importedState = parsed;
+        }
+      } catch (jsonErr) {
+        if (!activeSessionKey) {
+          alert('Hata: Aktif oturum anahtarı bulunamadı.');
+          return;
+        }
+        const decrypted = await decryptData(fileContent, activeSessionKey);
+        if (decrypted) {
+          importedState = JSON.parse(decrypted);
+        } else {
+          alert('Hata: Şifreli yedek bu şifreyle çözülemedi.');
+          return;
+        }
+      }
+      if (importedState) {
+        if (!confirm('Mevcut veriler silinecek. Onaylıyor musunuz?')) return;
+        S = importedState;
+        await saveState();
+        showToast('✅ Yedek başarıyla yüklendi');
+        navigate('dashboard');
+      } else {
+        alert('Hata: Geçersiz yedek dosyası.');
+      }
+    } catch(err) {
+      alert('Hata: ' + err.message);
+    }
+  };
+  r.readAsText(f);
+  e.target.value='';
+}
+function resetAll(){
+  if(!confirm('⚠️ TÜM veriler silinecek!'))return;
+  if(!confirm('Son onay — kalıcı olarak silinsin mi?'))return;
+  localStorage.removeItem('state_enc');
+  localStorage.removeItem('pwd_hash');
+  localStorage.removeItem('pwd_salt');
+  sessionStorage.removeItem('session_key');
+  location.reload();
+}
+
+// ═══════════════════════════════════════════
+// CSV EXPORT
+// ═══════════════════════════════════════════
+function exportCSV(mp){
+  const orders=S[mp]?.orders||[];if(!orders.length)return;
+  const head=['Sipariş No','Ürün','Adet','Satış Fiyatı','Toplam Gelir','Komisyon','Kargo','Kargo Tipi','Stopaj','Sabit Hizmet','Tahsilat','Ürün Maliyeti','KDV','Net Kâr','Tarih','Durum'];
+  const rows=orders.map(o=>{const d=calcOrderDetails(o,mp);return[o.orderNo||'',o.productName||'',d.qty,d.salePrice.toFixed(2),d.totalRev.toFixed(2),d.commission.toFixed(2),d.kargo.toFixed(2),d.kargoInfo.type,d.stopaj.toFixed(2),d.sabitHizmet.toFixed(2),d.tahsilat.toFixed(2),d.pcTotal.toFixed(2),d.kdv.toFixed(2),d.netProfit.toFixed(2),o.date||'',o.status||'']});
+  const csv='﻿'+[head,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`${mp}_${todayStr()}.csv`;a.click();URL.revokeObjectURL(url);
+}
+
+// ═══════════════════════════════════════════
+// INTERACTIVE VISUAL EFFECTS (CONSTELLATION & SPOTLIGHT)
+// ═══════════════════════════════════════════
+function initSpotlight() {
+  document.addEventListener('mousemove', e => {
+    const card = e.target.closest('.sc, .cc, .tw, .ubox, .mphead');
+    if (card) {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      card.style.setProperty('--mouse-x', `${x}px`);
+      card.style.setProperty('--mouse-y', `${y}px`);
+    }
+  });
+}
+
+function initClickRipple() {
+  document.addEventListener('click', e => {
+    if (e.target.closest('input, select, textarea, option, button:not(.btn), select option')) return;
+    const ripple = document.createElement('div');
+    ripple.className = 'click-ripple';
+    ripple.style.left = `${e.pageX}px`;
+    ripple.style.top = `${e.pageY}px`;
+    const brandCard = e.target.closest('.sc, .mphead, .ni');
+    if (brandCard) {
+      let color = '';
+      if (brandCard.classList.contains('ty') || brandCard.classList.contains('ni-ty')) color = '249, 115, 22';
+      else if (brandCard.classList.contains('hp') || brandCard.classList.contains('ni-hp')) color = '192, 132, 252';
+      else if (brandCard.classList.contains('tm') || brandCard.classList.contains('temu') || brandCard.classList.contains('ni-temu')) color = '96, 165, 250';
+      if (color) {
+        ripple.style.background = `radial-gradient(circle, rgba(${color}, 0.5) 0%, rgba(${color}, 0) 70%)`;
+        ripple.style.borderColor = `rgba(${color}, 0.6)`;
+      }
+    }
+    document.body.appendChild(ripple);
+    setTimeout(() => { ripple.remove(); }, 600);
+  });
+}
+
+function initConstellation() {
+  const canvas = document.getElementById('bg-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  const mouse = { x: null, y: null, radius: 120 };
+  
+  window.addEventListener('mousemove', e => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+  });
+  window.addEventListener('mouseout', () => {
+    mouse.x = null;
+    mouse.y = null;
+  });
+  
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    initParticles();
+  }
+  
+  class Particle {
+    constructor(x, y, vx, vy, size, color) {
+      this.x = x;
+      this.y = y;
+      this.vx = vx;
+      this.vy = vy;
+      this.size = size;
+      this.color = color;
+      this.baseAlpha = 0.15 + Math.random() * 0.2;
+      this.alpha = this.baseAlpha;
+    }
+    draw() {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fillStyle = this.color.replace('ALPHA', this.alpha.toFixed(2));
+      ctx.fill();
+    }
+    update() {
+      if (this.x < 0 || this.x > canvas.width) this.vx = -this.vx;
+      if (this.y < 0 || this.y > canvas.height) this.vy = -this.vy;
+      this.x += this.vx;
+      this.y += this.vy;
+      if (mouse.x !== null && mouse.y !== null) {
+        const dx = mouse.x - this.x;
+        const dy = mouse.y - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < mouse.radius) {
+          const force = (mouse.radius - dist) / mouse.radius;
+          this.x -= dx * force * 0.03;
+          this.y -= dy * force * 0.03;
+          this.alpha = Math.min(0.7, this.baseAlpha + force * 0.4);
+        } else {
+          if (this.alpha > this.baseAlpha) this.alpha -= 0.01;
+        }
+      } else {
+        if (this.alpha > this.baseAlpha) this.alpha -= 0.01;
+      }
+      this.draw();
+    }
+  }
+  
+  function initParticles() {
+    particles = [];
+    const count = Math.min(75, Math.floor((canvas.width * canvas.height) / 22000));
+    const colors = [
+      'rgba(129, 140, 248, ALPHA)',
+      'rgba(249, 115, 22, ALPHA)',
+      'rgba(192, 132, 252, ALPHA)',
+      'rgba(96, 165, 250, ALPHA)'
+    ];
+    for (let i = 0; i < count; i++) {
+      const size = 1.0 + Math.random() * 1.5;
+      const x = Math.random() * canvas.width;
+      const y = Math.random() * canvas.height;
+      const vx = (Math.random() - 0.5) * 0.35;
+      const vy = (Math.random() - 0.5) * 0.35;
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      particles.push(new Particle(x, y, vx, vy, size, color));
+    }
+  }
+  
+  function connect() {
+    for (let a = 0; a < particles.length; a++) {
+      for (let b = a + 1; b < particles.length; b++) {
+        const dx = particles[a].x - particles[b].x;
+        const dy = particles[a].y - particles[b].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 105) {
+          let alpha = (1 - (dist / 105)) * 0.12;
+          if (mouse.x !== null && mouse.y !== null) {
+            const mdx1 = mouse.x - particles[a].x;
+            const mdy1 = mouse.y - particles[a].y;
+            const md1 = Math.sqrt(mdx1 * mdx1 + mdy1 * mdy1);
+            if (md1 < mouse.radius) {
+              alpha *= 2.0;
+            }
+          }
+          ctx.strokeStyle = `rgba(255, 255, 255, ${Math.min(0.25, alpha).toFixed(2)})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(particles[a].x, particles[a].y);
+          ctx.lineTo(particles[b].x, particles[b].y);
+          ctx.stroke();
+        }
+      }
+    }
+  }
+  
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => p.update());
+    connect();
+    requestAnimationFrame(animate);
+  }
+  
+  window.addEventListener('resize', resize);
+  resize();
+  animate();
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+async function init(){
+  const now=new Date();
+  document.getElementById('topbar-date').textContent=now.toLocaleDateString('tr-TR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  
+  const password = sessionStorage.getItem('session_key');
+  if (!password) {
+    showLoginScreen();
+    return;
+  }
+  
+  try {
+    const saltHex = localStorage.getItem('pwd_salt');
+    if (!saltHex) {
+      handleLogout();
+      return;
+    }
+    activeSessionKey = await deriveKey(password, hexToBuf(saltHex));
+    const success = await loadState();
+    if (!success) {
+      return;
+    }
+  } catch (err) {
+    console.error('Initialization security check failed:', err);
+    handleLogout();
+    return;
+  }
+  
+  document.getElementById('login-overlay').style.display = 'none';
+  populateMonthFilter();
+  
+  // Uygulama açılır açılmaz tüm mevcut ürünlerin KDV'sini 10 yap (Kullanıcı talebi)
+  if (S.products && S.products.length > 0) {
+    let updated = false;
+    S.products.forEach(p => {
+      if (p.kdvRate !== 10) { p.kdvRate = 10; updated = true; }
+    });
+    if (updated) await saveState();
+  }
+  
+  renderDashboard();updateBadges();
+
+  // Modal Backdrop Close Listener
+  document.querySelectorAll('.mbk').forEach(mb=>mb.addEventListener('click',e=>{if(e.target===mb)mb.style.display='none'}));
+
+  // Görsel Efektleri Başlat
+  initSpotlight();
+  initConstellation();
+  initClickRipple();
+}
+init();
+</script>
+</body>
+</html>
