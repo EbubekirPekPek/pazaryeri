@@ -741,9 +741,9 @@
     .sandbox-drawer {
       position: fixed;
       top: 0;
+      bottom: 0;
       right: -360px;
       width: 360px;
-      height: 100vh;
       background: rgba(15, 15, 20, 0.85);
       backdrop-filter: blur(25px);
       -webkit-backdrop-filter: blur(25px);
@@ -788,6 +788,7 @@
       flex: 1;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
+      max-height: calc(100dvh - 75px);
       max-height: calc(100vh - 75px);
       min-height: 0;
       padding: 24px;
